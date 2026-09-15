@@ -1,0 +1,518 @@
+/*
+  المكتبة الرقمية للمشاريع والمواد الخيرية
+  ---------------------------------------------
+  هوية بصرية رسمية: خلفية فاتحة هادئة، مع الأخضر الداكن جدًا للرأس
+  والتذييل والعناوين الكبرى، ولمسات ذهبية ومتوسطة الخضرة للأزرار
+  والتفاعل. بطاقات نظيفة بحواف ناعمة وظلال خفيفة، وخط عربي حديث
+  واضح بدل خط الرقعة السابق.
+*/
+
+:root {
+  /* ألوان الهوية الرسمية */
+  --green-deep: #0d3510; /* أخضر داكن جدًا */
+  --gold: #eea74b; /* ذهبي فاتح */
+  --green-medium: #58ad23; /* أخضر متوسط */
+  --olive-yellow-light: #c2c947; /* أصفر زيتوني فاتح */
+  --green-dark: #144b14; /* أخضر داكن */
+  --green-black: #0e340f; /* أخضر أسود */
+  --olive-yellow: #b9b13b; /* أصفر زيتوني */
+  --green-herb: #5aae24; /* أخضر عشبي */
+  --olive-copper: #956e2b; /* نحاسي زيتوني داكن */
+  --lemon-light: #bfc847; /* أصفر ليموني فاتح */
+  --blue-gray: #7f97a1; /* رمادي مزرق */
+
+  /* أدوار نصية ومساحية مبنية على الهوية أعلاه */
+  --ink: #16241a;
+  --ink-soft: #4c5c50;
+  --bg: #f7f5ee;
+  --panel: #ffffff;
+  --panel-alt: #f0efe6;
+  --line: rgba(13, 53, 16, 0.14);
+  --line-strong: rgba(13, 53, 16, 0.22);
+  --paper-text-max-width: 62ch;
+
+  --font-display: "Noto Kufi Arabic", "Tahoma", sans-serif;
+  --font-body: "IBM Plex Sans Arabic", "Tahoma", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.85;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: var(--green-dark);
+}
+
+:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+.container {
+  width: 100%;
+  max-width: 1040px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+/* ===== رأس الصفحة ===== */
+
+.site-header {
+  background: var(--green-deep);
+  color: #f3f6ee;
+  padding-block: 20px;
+}
+
+.site-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.site-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* حاوية شعار المؤسسة: حجم مرن بين حدّ أدنى وأقصى بواسطة clamp، حتى
+   يتناسق الشعار مع حجم الشاشة دون أن يطغى على اسم الموقع. الشعار
+   الحقيقي يُقرأ من assets/images/institution-logo.png (أو المسار
+   النسبي المكافئ من داخل projects/). يمكن استبدال الشعار لاحقًا بوضع
+   ملف آخر بنفس الاسم والمسار دون أي تعديل على الكود. */
+.brand-logo {
+  flex: 0 0 auto;
+  width: clamp(48px, 12vw, 72px);
+  height: clamp(48px, 12vw, 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.institution-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+}
+
+/* عنصر احتياطي (fallback) يظهر فقط عبر JavaScript (onerror على الصورة)
+   في حال تعذّر تحميل ملف الشعار من مساره المعتمد، حتى لا تظهر أيقونة
+   صورة مكسورة للزائر. مخفي افتراضيًا بواسطة display: none. */
+.logo-fallback {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  border: 1.5px dashed rgba(243, 246, 238, 0.55);
+  border-radius: 10px;
+  color: rgba(243, 246, 238, 0.7);
+  font-size: 0.7rem;
+  line-height: 1.2;
+  padding: 4px;
+  background: rgba(243, 246, 238, 0.06);
+}
+
+.institution-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: rgba(243, 246, 238, 0.85);
+}
+
+.site-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.05rem, 3.6vw, 1.6rem);
+  line-height: 1.4;
+  margin: 0;
+  max-width: 46ch;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.site-title a {
+  color: #f3f6ee;
+  text-decoration: none;
+}
+
+.site-tagline {
+  margin: 0;
+  color: rgba(243, 246, 238, 0.78);
+  font-size: 0.95rem;
+}
+
+.breadcrumb {
+  font-size: 0.9rem;
+  color: rgba(243, 246, 238, 0.78);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.breadcrumb a {
+  color: #f3f6ee;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(243, 246, 238, 0.4);
+}
+
+/* ===== البطل / المقدمة ===== */
+
+.hero {
+  padding-block: 56px 40px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: clamp(1.9rem, 4vw, 2.7rem);
+  line-height: 1.4;
+  max-width: 22ch;
+  margin: 0 0 18px;
+  overflow-wrap: break-word;
+}
+
+.hero p {
+  max-width: var(--paper-text-max-width);
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.page-intro {
+  padding-block: 40px 8px;
+}
+
+.page-intro h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: clamp(1.5rem, 3.2vw, 2.1rem);
+  line-height: 1.45;
+  margin: 8px 0 14px;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.page-intro p {
+  max-width: var(--paper-text-max-width);
+  color: var(--ink-soft);
+}
+
+/* ===== قسم عام ===== */
+
+section {
+  padding-block: 40px;
+}
+
+.section-heading {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: 1.4rem;
+  margin: 0 0 24px;
+  padding-inline-start: 14px;
+  border-inline-start: 4px solid var(--gold);
+}
+
+/* ===== بطاقات المشاريع ===== */
+
+#featured-projects {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.project-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(13, 53, 16, 0.06), 0 6px 18px rgba(13, 53, 16, 0.07);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+
+.project-card:hover {
+  box-shadow: 0 2px 4px rgba(13, 53, 16, 0.08), 0 10px 24px rgba(13, 53, 16, 0.1);
+  transform: translateY(-2px);
+}
+
+.project-card h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: 1.2rem;
+  line-height: 1.5;
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.project-card p {
+  color: var(--ink-soft);
+  margin: 0;
+  flex-grow: 1;
+}
+
+/* ===== قائمة المواد ===== */
+
+#material-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.material-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* تجميع ثابت (غير تفاعلي) حسب المسار داخل أقسام المخرجات */
+.material-track {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.track-heading {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--olive-copper);
+  font-size: 1rem;
+  margin: 0;
+  padding-inline-start: 10px;
+  border-inline-start: 3px solid var(--olive-yellow-light);
+}
+
+.material-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(13, 53, 16, 0.05), 0 4px 14px rgba(13, 53, 16, 0.06);
+  padding: 26px 24px;
+}
+
+.material-card h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: 1.1rem;
+  margin: 0 0 8px;
+}
+
+/* بطاقة مادة "قيد التجهيز": مظهر مخفّف واضح أنه بلا رابط فعّال، حتى لا
+   تبدو البطاقة كأن التحميل متاح. */
+.material-card--pending {
+  background: var(--panel-alt);
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.material-card--pending h3 {
+  color: var(--ink-soft);
+}
+
+.status-badge {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.status-badge--pending {
+  background: rgba(127, 151, 161, 0.16);
+  color: var(--blue-gray);
+  border: 1px solid rgba(127, 151, 161, 0.35);
+}
+
+.pending-note {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.material-card > p:not(.download-note) {
+  color: var(--ink-soft);
+  max-width: var(--paper-text-max-width);
+  margin: 0 0 14px;
+}
+
+.material-meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: var(--olive-copper);
+  margin-bottom: 16px;
+}
+
+.material-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.download-note {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  max-width: var(--paper-text-max-width);
+  margin: 0;
+}
+
+.empty-state {
+  color: var(--ink-soft);
+  padding-block: 12px;
+}
+
+/* ===== الأزرار ===== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 26px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.98rem;
+  border: 2px solid transparent;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.btn--primary {
+  background: var(--green-medium);
+  color: #ffffff;
+  border-color: var(--green-medium);
+}
+
+.btn--primary:hover {
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+}
+
+.btn--secondary {
+  background: transparent;
+  color: var(--green-deep);
+  border-color: var(--gold);
+}
+
+.btn--secondary:hover {
+  background: var(--gold);
+  color: var(--green-deep);
+}
+
+/* ===== تذييل الصفحة ===== */
+
+.site-footer {
+  background: var(--green-deep);
+  color: rgba(243, 246, 238, 0.78);
+  padding-block: 28px;
+  font-size: 0.85rem;
+}
+
+.site-footer a {
+  color: #f3f6ee;
+}
+
+.footer-copyright {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(243, 246, 238, 0.18);
+}
+
+/* ===== صفحة 404 ===== */
+
+.not-found {
+  padding-block: 90px;
+  text-align: center;
+}
+
+.not-found h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: 2.2rem;
+  margin: 0 0 14px;
+}
+
+.not-found p {
+  color: var(--ink-soft);
+  margin: 0 0 26px;
+}
+
+@media (max-width: 560px) {
+  .hero {
+    padding-block: 40px 28px;
+  }
+  section {
+    padding-block: 28px;
+  }
+  .brand-logo {
+    width: 44px;
+    height: 44px;
+  }
+  .logo-fallback {
+    font-size: 0.6rem;
+  }
+  .btn {
+    width: 100%;
+  }
+  .material-actions {
+    flex-direction: column;
+  }
+}
