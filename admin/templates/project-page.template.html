@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>مشروع صناعة منهج تربوي متكامل للمراكز الصيفية — مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية</title>
+  <title>{{PROJECT_NAME}} — {{SITE_NAME}}</title>
   <meta
     name="description"
-    content="مشروع صناعة منهج تربوي متكامل للمراكز الصيفية، أحد مشاريع مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية. يهدف مشروع «صناعة منهج تربوي متكامل للمراكز الصيفية للفئة العمرية (7–10) سنوات» إلى بناء شخصية الطفل بناءً متوازناً إيمانيًا وسلوكيًا وفكريًا ومهاريًا، عبر منهج تربوي محبب يراعي خصائص المرحلة العمرية، ويعزز محبة الله والاعتزاز بالدين والهوية وحسن الخلق."
+    content="{{PROJECT_NAME}}، أحد مشاريع {{SITE_NAME}}. {{PROJECT_DESCRIPTION}}"
   />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,8 +21,8 @@
     <div class="container">
       <div class="brand-logo">
         <img
-          src="../assets/images/institution-logo.png"
-          alt="شعار مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية"
+          src="{{LOGO_PATH}}"
+          alt="شعار {{SITE_NAME}}"
           class="institution-logo"
           onerror="this.hidden=true; var f=document.getElementById('logoFallbackProject'); if (f) { f.style.display='flex'; }"
         />
@@ -30,32 +30,32 @@
       </div>
       <div class="site-header-text">
         <p class="site-title">
-          <a href="../index.html">مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية</a>
+          <a href="../index.html">{{SITE_NAME}}</a>
         </p>
         <p class="institution-name">مؤسسة تنمية الشبابية الاجتماعية</p>
-        <p class="breadcrumb"><a href="../index.html">الرئيسية</a> ← مشروع صناعة منهج تربوي متكامل للمراكز الصيفية</p>
+        <p class="breadcrumb"><a href="../index.html">الرئيسية</a> ← {{PROJECT_NAME}}</p>
       </div>
     </div>
   </header>
 
   <section class="page-intro">
     <div class="container">
-      <h1>مشروع صناعة منهج تربوي متكامل للمراكز الصيفية</h1>
-      <p>يهدف مشروع «صناعة منهج تربوي متكامل للمراكز الصيفية للفئة العمرية (7–10) سنوات» إلى بناء شخصية الطفل بناءً متوازناً إيمانيًا وسلوكيًا وفكريًا ومهاريًا، عبر منهج تربوي محبب يراعي خصائص المرحلة العمرية، ويعزز محبة الله والاعتزاز بالدين والهوية وحسن الخلق.</p>
+      <h1>{{PROJECT_NAME}}</h1>
+      <p>{{PROJECT_DESCRIPTION}}</p>
       <p>اضغط على اسم المادة لتنزيلها إن كانت متاحة؛ المواد التي لم تُرفع بعد تظهر بعبارة "قيد التجهيز".</p>
     </div>
   </section>
 
   <section>
     <div class="container">
-      <div id="material-list" data-project-slug="integrated-educational-curriculum-summer-centers-ages-7-10"></div>
+      <div id="material-list" data-project-slug="{{PROJECT_SLUG}}"></div>
     </div>
   </section>
 
   <footer class="site-footer">
     <div class="container">
       <p>
-        مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية — قد يفتح المتصفح
+        {{SITE_NAME}} — قد يفتح المتصفح
         الملف في تبويب بدل تنزيله تلقائيًا؛ هذا يعتمد على إعدادات المتصفح
         لا على الموقع.
       </p>

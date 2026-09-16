@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>لوحة إدارة محلية — مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+
+<header class="admin-header">
+  <div class="admin-header-inner">
+    <h1>إدارة مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية</h1>
+    <p class="admin-subtitle">لوحة إدارة محلية — للتطوير فقط</p>
+  </div>
+</header>
+
+<div class="admin-notice" role="note">
+  <span class="admin-notice-icon" aria-hidden="true">⚠</span>
+  <span>هذه لوحة إدارة محلية للتطوير، ولا تُنشر مع الموقع العام.</span>
+</div>
+
+<div id="notifications" class="notifications" role="status" aria-live="polite"></div>
+
+<main class="admin-main">
+
+  <!-- شاشة تحميل أولية -->
+  <div id="loadingState" class="loading-state">
+    <div class="spinner" aria-hidden="true"></div>
+    <p>جارٍ تحميل بيانات المشاريع من خادم الإدارة المحلي…</p>
+  </div>
+
+  <!-- شاشة تعذّر الاتصال بالخادم -->
+  <div id="connectionErrorState" class="connection-error-state" hidden>
+    <h2>تعذّر الاتصال بخادم الإدارة المحلي</h2>
+    <p id="connectionErrorMessage">
+      تعذّر الاتصال بخادم الإدارة المحلي. تأكد من تشغيل
+      <code>admin_server.py</code> ثم اضغط إعادة المحاولة.
+    </p>
+    <p id="connectionErrorDetail" class="connection-error-detail"></p>
+    <p>
+      تأكد من تشغيل <code>python admin_server.py</code> على
+      <code>http://127.0.0.1:8765</code> ثم اضغط إعادة المحاولة.
+    </p>
+    <button type="button" id="retryLoadBtn" class="btn btn-primary">إعادة المحاولة</button>
+  </div>
+
+  <!-- ============== شاشة قائمة المشاريع ============== -->
+  <section id="view-list" class="view" hidden>
+    <div class="view-list-toolbar">
+      <h2>المشاريع والبرامج الحالية</h2>
+      <button type="button" id="openAddProjectBtn" class="btn btn-accent">+ إضافة مشروع</button>
+    </div>
+    <div id="projectsGrid" class="projects-grid"></div>
+  </section>
+
+  <!-- ============== شاشة إدارة مشروع واحد ============== -->
+  <section id="view-project" class="view" hidden>
+    <button type="button" id="backToListBtn" class="btn btn-ghost back-btn">→ رجوع لقائمة المشاريع</button>
+
+    <div class="project-detail-header">
+      <h2 id="projectDetailName"></h2>
+      <p id="projectDetailDescription" class="project-detail-desc"></p>
+    </div>
+
+    <div class="project-detail-toolbar">
+      <button type="button" id="openAddSectionBtn" class="btn btn-secondary">+ إضافة قسم</button>
+      <button type="button" id="openAddMaterialBtn" class="btn btn-accent">+ إضافة مادة</button>
+    </div>
+
+    <div id="sectionsContainer" class="sections-container"></div>
+  </section>
+
+</main>
+
+<!-- شريط الحفظ السفلي الثابت -->
+<div id="saveBar" class="save-bar" hidden>
+  <div class="save-bar-inner">
+    <span id="saveBarStatus" class="save-bar-status"></span>
+    <button type="button" id="saveAllBtn" class="btn btn-primary btn-large">اعتماد وحفظ التغييرات</button>
+  </div>
+</div>
+
+<!-- ============== نافذة: إضافة مشروع ============== -->
+<div id="modal-add-project" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalAddProjectTitle">
+    <div class="modal-header">
+      <h3 id="modalAddProjectTitle">+ إضافة مشروع جديد</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-add-project" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="field-hint">
+        عند الضغط على «إنشاء المشروع الآن» سيُرسل هذا النموذج فورًا إلى
+        خادم الإدارة المحلي، الذي سيُضيف المشروع إلى
+        <code>data/materials.js</code> وينشئ صفحته HTML مباشرة على القرص
+        (بعد أخذ نسخة احتياطية). لا يعمل هذا كمسودة يمكن التراجع عنها.
+      </p>
+      <form id="addProjectForm" novalidate>
+        <div class="form-group">
+          <label for="projectName">اسم المشروع بالعربية <span class="req">*</span></label>
+          <input type="text" id="projectName" name="name" maxlength="200" autocomplete="off" />
+          <p class="field-error" id="projectNameError"></p>
+        </div>
+
+        <div class="form-group">
+          <label for="projectDescription">وصف المشروع</label>
+          <textarea id="projectDescription" name="description" rows="3" maxlength="600"></textarea>
+          <p class="field-error" id="projectDescriptionError"></p>
+        </div>
+
+        <div class="form-group">
+          <label for="projectSlug">
+            slug (بالإنجليزية أو أحرف آمنة فقط) <span class="req">*</span>
+          </label>
+          <input type="text" id="projectSlug" name="slug" maxlength="80" autocomplete="off" dir="ltr" placeholder="example-project-slug" />
+          <p class="field-hint">أحرف إنجليزية صغيرة وأرقام وشرطات فقط، بدون مسافات.</p>
+          <p class="field-error" id="projectSlugError"></p>
+        </div>
+
+        <div class="form-group">
+          <label for="projectOrder">ترتيب المشروع (اختياري)</label>
+          <input type="number" id="projectOrder" name="order" step="1" />
+        </div>
+
+        <div class="preview-block">
+          <h4>معاينة بطاقة المشروع</h4>
+          <div id="projectPreview" class="preview-project-card">
+            <h3 class="preview-project-name" data-empty="سيظهر اسم المشروع هنا">سيظهر اسم المشروع هنا</h3>
+            <p class="preview-project-desc" data-empty="سيظهر وصف المشروع هنا">سيظهر وصف المشروع هنا</p>
+            <p class="preview-project-count">0 مادة</p>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-add-project">إلغاء</button>
+      <button type="button" id="submitAddProjectBtn" class="btn btn-primary">إنشاء المشروع الآن</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: تعديل مشروع ============== -->
+<div id="modal-edit-project" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalEditProjectTitle">
+    <div class="modal-header">
+      <h3 id="modalEditProjectTitle">✎ تعديل المشروع</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-edit-project" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="field-hint">
+        عند الضغط على «حفظ التعديلات» سيُرسل هذا فورًا إلى خادم الإدارة
+        المحلي، الذي سيُحدّث المشروع في <code>data/materials.js</code>
+        ويُعيد توليد صفحته HTML (بعد أخذ نسخة احتياطية من كل منهما). لا
+        يعمل هذا كمسودة يمكن التراجع عنها، ولا يمكن تغيير الـ slug هنا.
+      </p>
+      <form id="editProjectForm" novalidate>
+        <div class="form-group">
+          <label for="editProjectName">اسم المشروع بالعربية <span class="req">*</span></label>
+          <input type="text" id="editProjectName" name="name" maxlength="200" autocomplete="off" />
+          <p class="field-error" id="editProjectNameError"></p>
+        </div>
+
+        <div class="form-group">
+          <label for="editProjectDescription">وصف المشروع</label>
+          <textarea id="editProjectDescription" name="description" rows="3" maxlength="1000"></textarea>
+          <p class="field-error" id="editProjectDescriptionError"></p>
+        </div>
+
+        <div class="form-group">
+          <label>slug — للقراءة فقط، لا يمكن تغييره</label>
+          <div class="readonly-field-value" id="editProjectSlugDisplay" dir="ltr"></div>
+          <input type="hidden" id="editProjectSlug" />
+        </div>
+
+        <div class="form-group">
+          <label for="editProjectOrder">ترتيب المشروع (اختياري)</label>
+          <input type="number" id="editProjectOrder" name="order" step="1" />
+          <p class="field-error" id="editProjectOrderError"></p>
+        </div>
+      </form>
+
+      <div class="preview-block">
+        <h4>ملخص المشروع الحالي</h4>
+        <p class="preview-note">
+          هذا الملخص محسوب من بيانات المشروع الفعلية، وليس نصًا ثابتًا.
+        </p>
+        <div id="editProjectSummary" class="project-summary"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-edit-project">إلغاء</button>
+      <button type="button" id="submitEditProjectBtn" class="btn btn-primary">حفظ التعديلات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: تعديل قسم ============== -->
+<div id="modal-edit-section" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalEditSectionTitle">
+    <div class="modal-header">
+      <h3 id="modalEditSectionTitle">✎ تعديل القسم</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-edit-section" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="field-hint">
+        سيُرسل الحفظ فورًا إلى خادم الإدارة المحلي، الذي سيُحدّث اسم
+        القسم ويُحدّث تلقائيًا كل مادة كانت مرتبطة بالاسم القديم ضمن نفس
+        المشروع (بعد أخذ نسخة احتياطية). لن تتأثر مواد الأقسام الأخرى.
+      </p>
+      <form id="editSectionForm" novalidate>
+        <div class="form-group">
+          <label>المشروع — للقراءة فقط</label>
+          <div class="readonly-field-value" id="editSectionProjectDisplay"></div>
+          <input type="hidden" id="editSectionProject" />
+          <input type="hidden" id="editSectionOldName" />
+        </div>
+
+        <div class="form-group">
+          <label for="editSectionName">اسم القسم <span class="req">*</span></label>
+          <input type="text" id="editSectionName" name="name" maxlength="200" autocomplete="off" />
+          <p class="field-error" id="editSectionNameError"></p>
+        </div>
+
+        <div class="form-group">
+          <label for="editSectionDescription">وصف اختياري</label>
+          <textarea id="editSectionDescription" name="description" rows="2" maxlength="400"></textarea>
+          <p class="field-error" id="editSectionDescriptionError"></p>
+        </div>
+
+        <div class="form-group">
+          <label for="editSectionOrder">ترتيب القسم</label>
+          <input type="number" id="editSectionOrder" name="order" step="1" />
+          <p class="field-error" id="editSectionOrderError"></p>
+        </div>
+
+        <div class="form-group">
+          <label>عدد المواد التابعة حاليًا — للقراءة فقط</label>
+          <div class="readonly-field-value" id="editSectionMaterialsCount"></div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-edit-section">إلغاء</button>
+      <button type="button" id="submitEditSectionBtn" class="btn btn-primary">حفظ التعديلات</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: إضافة قسم ============== -->
+<div id="modal-add-section" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalAddSectionTitle">
+    <div class="modal-header">
+      <h3 id="modalAddSectionTitle">+ إضافة قسم جديد</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-add-section" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="addSectionForm" novalidate>
+        <div class="form-group">
+          <label for="sectionProject">المشروع التابع له <span class="req">*</span></label>
+          <select id="sectionProject" name="project"></select>
+        </div>
+
+        <div class="form-group">
+          <label for="sectionName">اسم القسم <span class="req">*</span></label>
+          <input type="text" id="sectionName" name="name" maxlength="200" autocomplete="off" />
+          <p class="field-error" id="sectionNameError"></p>
+        </div>
+
+        <div class="form-group">
+          <label for="sectionDescription">وصف اختياري</label>
+          <textarea id="sectionDescription" name="description" rows="2" maxlength="400"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="sectionOrder">ترتيب القسم</label>
+          <input type="number" id="sectionOrder" name="order" step="1" value="0" />
+          <p class="field-error" id="sectionOrderError"></p>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-add-section">إلغاء</button>
+      <button type="button" id="submitAddSectionBtn" class="btn btn-primary">إضافة القسم إلى المسودة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: إضافة مادة ============== -->
+<div id="modal-add-material" class="modal-overlay" hidden>
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="modalAddMaterialTitle">
+    <div class="modal-header">
+      <h3 id="modalAddMaterialTitle">+ إضافة مادة جديدة</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-add-material" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="addMaterialForm" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="materialProject">المشروع <span class="req">*</span></label>
+            <select id="materialProject" name="project"></select>
+          </div>
+
+          <div class="form-group">
+            <label for="materialSection">القسم <span class="req">*</span></label>
+            <select id="materialSection" name="section"></select>
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="materialTitle">عنوان المادة بالعربية <span class="req">*</span></label>
+            <input type="text" id="materialTitle" name="title" maxlength="250" autocomplete="off" />
+            <p class="field-error" id="materialTitleError"></p>
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="materialDescription">وصف المادة</label>
+            <textarea id="materialDescription" name="description" rows="2" maxlength="600"></textarea>
+            <p class="field-error" id="materialDescriptionError"></p>
+          </div>
+
+          <div class="form-group">
+            <label for="materialFileType">نوع الملف <span class="req">*</span></label>
+            <select id="materialFileType" name="fileType">
+              <option value="PDF">PDF</option>
+              <option value="Word">Word</option>
+              <option value="صورة">صورة</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="materialFileSize">الحجم (اختياري)</label>
+            <input type="text" id="materialFileSize" name="fileSize" maxlength="60" autocomplete="off" placeholder="مثال: 442 KB تقريبًا" />
+          </div>
+
+          <div class="form-group">
+            <label for="materialTrack">المسار (track) — اختياري</label>
+            <input type="text" id="materialTrack" name="track" maxlength="120" autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label for="materialOrder">ترتيب المادة (اختياري)</label>
+            <input type="number" id="materialOrder" name="order" step="1" />
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="materialDownloadUrl">رابط Internet Archive المباشر</label>
+            <div class="url-input-row">
+              <input
+                type="text"
+                id="materialDownloadUrl"
+                name="downloadUrl"
+                dir="ltr"
+                autocomplete="off"
+                placeholder="https://archive.org/download/<identifier>/<filename>"
+              />
+              <button type="button" id="checkUrlBtn" class="btn btn-secondary btn-small">تحقق من الرابط</button>
+            </div>
+            <p id="urlStatusLine" class="url-status url-status-pending">
+              <span class="url-status-dot" aria-hidden="true"></span>
+              <span id="urlStatusText">لم يُدخل رابط بعد — ستكون حالة المادة «قيد التجهيز».</span>
+            </p>
+          </div>
+
+          <div class="form-group form-group-full">
+            <p class="computed-status-line">
+              الحالة المحسوبة تلقائيًا:
+              <strong id="materialComputedStatus">قيد التجهيز (pending)</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="preview-block">
+          <h4>معاينة بطاقة المادة كما ستظهر للزائر</h4>
+          <p class="preview-note">هذه معاينة بصرية فقط، ولا تُحفظ أي بيانات حتى الضغط على «اعتماد وحفظ».</p>
+          <div id="materialPreview" class="preview-material-card"></div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-add-material">إلغاء</button>
+      <button type="button" id="submitAddMaterialBtn" class="btn btn-primary">إضافة المادة إلى المسودة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: عرض تفاصيل مادة ============== -->
+<div id="modal-view-material" class="modal-overlay" hidden>
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="modalViewMaterialTitle">
+    <div class="modal-header">
+      <h3 id="modalViewMaterialTitle">عرض تفاصيل المادة</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-view-material" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <dl id="viewMaterialDetails" class="view-material-details"></dl>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-view-material">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: تعديل مادة ============== -->
+<div id="modal-edit-material" class="modal-overlay" hidden>
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="modalEditMaterialTitle">
+    <div class="modal-header">
+      <h3 id="modalEditMaterialTitle">✎ تعديل مادة</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-edit-material" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="field-hint">
+        التعديل يُحفظ أولًا في مسودة محلية فقط، ولن يُكتب فعليًا على القرص
+        إلا عند الضغط على «اعتماد وحفظ» بالأسفل (تُؤخذ نسخة احتياطية
+        تلقائيًا حينها قبل الكتابة).
+      </p>
+      <form id="editMaterialForm" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>المعرف (id) — للقراءة فقط</label>
+            <div class="readonly-field-value" id="editMaterialIdDisplay" dir="ltr"></div>
+            <input type="hidden" id="editMaterialId" />
+          </div>
+
+          <div class="form-group">
+            <label>المشروع — للقراءة فقط</label>
+            <div class="readonly-field-value" id="editMaterialProjectDisplay"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="editMaterialSection">القسم <span class="req">*</span></label>
+            <select id="editMaterialSection" name="section"></select>
+          </div>
+
+          <div class="form-group">
+            <label for="editMaterialFileType">نوع الملف <span class="req">*</span></label>
+            <select id="editMaterialFileType" name="fileType">
+              <option value="PDF">PDF</option>
+              <option value="Word">Word</option>
+              <option value="صورة">صورة</option>
+            </select>
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="editMaterialTitle">عنوان المادة بالعربية <span class="req">*</span></label>
+            <input type="text" id="editMaterialTitle" name="title" maxlength="250" autocomplete="off" />
+            <p class="field-error" id="editMaterialTitleError"></p>
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="editMaterialDescription">وصف المادة</label>
+            <textarea id="editMaterialDescription" name="description" rows="2" maxlength="600"></textarea>
+            <p class="field-error" id="editMaterialDescriptionError"></p>
+          </div>
+
+          <div class="form-group">
+            <label for="editMaterialFileSize">الحجم (اختياري)</label>
+            <input type="text" id="editMaterialFileSize" name="fileSize" maxlength="60" autocomplete="off" placeholder="مثال: 442 KB تقريبًا" />
+          </div>
+
+          <div class="form-group">
+            <label for="editMaterialTrack">المسار (track) — اختياري</label>
+            <input type="text" id="editMaterialTrack" name="track" maxlength="120" autocomplete="off" />
+          </div>
+
+          <div class="form-group">
+            <label for="editMaterialOrder">ترتيب المادة (اختياري)</label>
+            <input type="number" id="editMaterialOrder" name="order" step="1" />
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="editMaterialDownloadUrl">رابط Internet Archive المباشر</label>
+            <div class="url-input-row">
+              <input
+                type="text"
+                id="editMaterialDownloadUrl"
+                name="downloadUrl"
+                dir="ltr"
+                autocomplete="off"
+                placeholder="https://archive.org/download/<identifier>/<filename>"
+              />
+              <button type="button" id="editCheckUrlBtn" class="btn btn-secondary btn-small">تحقق من الرابط</button>
+            </div>
+            <p id="editUrlStatusLine" class="url-status url-status-pending">
+              <span class="url-status-dot" aria-hidden="true"></span>
+              <span id="editUrlStatusText">لم يُدخل رابط بعد — ستكون حالة المادة «قيد التجهيز».</span>
+            </p>
+          </div>
+
+          <div class="form-group form-group-full">
+            <p class="computed-status-line">
+              الحالة المحسوبة تلقائيًا:
+              <strong id="editMaterialComputedStatus">قيد التجهيز (pending)</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="preview-block">
+          <h4>معاينة بطاقة المادة كما ستظهر للزائر</h4>
+          <p class="preview-note">هذه معاينة بصرية فقط، ولا تُحفظ أي بيانات حتى الضغط على «اعتماد وحفظ».</p>
+          <div id="editMaterialPreview" class="preview-material-card"></div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-edit-material">إلغاء</button>
+      <button type="button" id="submitEditMaterialBtn" class="btn btn-primary">حفظ التعديلات في المسودة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: تأكيد حذف مادة ============== -->
+<div id="modal-confirm-delete-material" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalDeleteMaterialTitle">
+    <div class="modal-header">
+      <h3 id="modalDeleteMaterialTitle">تأكيد حذف المادة</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-confirm-delete-material" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>
+        هل أنت متأكد من حذف المادة:
+        <strong id="deleteMaterialTitle"></strong>؟
+      </p>
+      <p class="field-hint">المعرف (id): <code id="deleteMaterialId" dir="ltr"></code></p>
+      <div class="delete-warning-box">
+        سيُحذف من المسودة المحلية فورًا، لكنه لن يُحذف فعليًا من
+        <code>data/materials.js</code> على القرص إلا بعد الضغط على «اعتماد
+        وحفظ» بالأسفل — وحينها تُؤخذ نسخة احتياطية تلقائيًا قبل الكتابة، ولا
+        يمكن التراجع عن الحذف الفعلي بعدها إلا باستعادة تلك النسخة يدويًا.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-confirm-delete-material">إلغاء</button>
+      <button type="button" id="confirmDeleteMaterialBtn" class="btn btn-danger">حذف المادة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: تأكيد الحفظ ============== -->
+<div id="modal-confirm-save" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalConfirmSaveTitle">
+    <div class="modal-header">
+      <h3 id="modalConfirmSaveTitle">تأكيد الاعتماد والحفظ</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-confirm-save" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>سيتم إرسال كل بيانات المسودة الحالية إلى خادم الإدارة المحلي وكتابتها فعليًا في <code>data/materials.js</code>، مع أخذ نسخة احتياطية تلقائية قبل الكتابة.</p>
+      <div id="saveSummary" class="save-summary"></div>
+      <p class="save-warning">هل تريد المتابعة؟</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-confirm-save">إلغاء</button>
+      <button type="button" id="confirmSaveBtn" class="btn btn-primary">تأكيد الحفظ الآن</button>
+    </div>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

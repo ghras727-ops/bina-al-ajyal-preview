@@ -45,6 +45,119 @@
   }
 
   /**
+   * مشاركة رابط مادة واحدة (title + الرابط المباشر لملفها كما هو في
+   * item.downloadUrl، دون أي تعديل عليه). تُستخدم واجهة المشاركة الأصلية
+   * للمتصفح (navigator.share) عند توفرها، وإلا تُعرض نافذة بديلة صغيرة
+   * تحتوي على خيارات: نسخ الرابط، واتساب، تيليجرام، البريد الإلكتروني،
+   * وإغلاق. لا يُستخدم أي API خارجي أو تخزين محلي أو عدّاد.
+   */
+  function shareMaterial(title, url) {
+    if (navigator.share) {
+      navigator.share({ title: title, url: url }).catch(function () {
+        // تجاهل: المستخدم ألغى المشاركة أو حدث خطأ غير حرج من المتصفح.
+      });
+      return;
+    }
+    openShareFallback(title, url);
+  }
+
+  /** بناء وعرض نافذة المشاركة البديلة عند غياب دعم navigator.share. */
+  function openShareFallback(title, url) {
+    const encodedUrl = encodeURIComponent(url);
+    const encodedTitle = encodeURIComponent(title);
+
+    const overlay = el("div", { class: "share-modal-overlay", role: "presentation" });
+    const dialog = el("div", {
+      class: "share-modal",
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-labelledby": "share-modal-title",
+    });
+
+    dialog.appendChild(el("h3", { id: "share-modal-title" }, "مشاركة المادة"));
+
+    const list = el("div", { class: "share-modal-options" });
+
+    const copyBtn = el("button", { type: "button", class: "btn btn--secondary share-modal-option" }, "نسخ الرابط");
+    copyBtn.addEventListener("click", function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(
+          function () {
+            copyBtn.textContent = "تم نسخ الرابط";
+          },
+          function () {
+            copyBtn.textContent = "تعذر نسخ الرابط";
+          }
+        );
+      } else {
+        copyBtn.textContent = "تعذر نسخ الرابط";
+      }
+    });
+    list.appendChild(copyBtn);
+
+    const whatsappLink = el(
+      "a",
+      {
+        class: "btn btn--secondary share-modal-option",
+        href: "https://wa.me/?text=" + encodedTitle + "%20" + encodedUrl,
+        target: "_blank",
+        rel: "noopener noreferrer",
+      },
+      "واتساب"
+    );
+    list.appendChild(whatsappLink);
+
+    const telegramLink = el(
+      "a",
+      {
+        class: "btn btn--secondary share-modal-option",
+        href: "https://t.me/share/url?url=" + encodedUrl + "&text=" + encodedTitle,
+        target: "_blank",
+        rel: "noopener noreferrer",
+      },
+      "تيليجرام"
+    );
+    list.appendChild(telegramLink);
+
+    const emailLink = el(
+      "a",
+      {
+        class: "btn btn--secondary share-modal-option",
+        href: "mailto:?subject=" + encodedTitle + "&body=" + encodedUrl,
+      },
+      "البريد الإلكتروني"
+    );
+    list.appendChild(emailLink);
+
+    dialog.appendChild(list);
+
+    const closeBtn = el("button", { type: "button", class: "btn btn--primary share-modal-close" }, "إغلاق");
+    function closeModal() {
+      if (overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+      }
+      document.removeEventListener("keydown", onKeydown);
+    }
+    function onKeydown(evt) {
+      if (evt.key === "Escape") {
+        closeModal();
+      }
+    }
+    closeBtn.addEventListener("click", closeModal);
+    overlay.addEventListener("click", function (evt) {
+      if (evt.target === overlay) {
+        closeModal();
+      }
+    });
+    document.addEventListener("keydown", onKeydown);
+
+    dialog.appendChild(closeBtn);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    closeBtn.focus();
+  }
+
+  /**
    * بناء بطاقة عرض واحدة لمادة.
    * المواد المتاحة (status !== "pending") تحتفظ بالسلوك المعتمد سابقًا:
    * زرا "تحميل الملف" و"قراءة الملف" يفتحان في تبويب جديد.
@@ -122,6 +235,24 @@
     );
     actions.appendChild(readBtn);
 
+    // زر "مشاركة" — يظهر فقط للمواد المتاحة التي تملك رابط تنزيل صالح
+    // (item.downloadUrl). يشارك الرابط المباشر للملف نفسه كما هو، دون أي
+    // تعديل عليه ودون أي رابط وسيط لصفحة المشروع أو الصفحة.
+    if (item.downloadUrl) {
+      const shareBtn = el(
+        "button",
+        {
+          type: "button",
+          class: "btn btn--secondary btn--share",
+        },
+        "مشاركة"
+      );
+      shareBtn.addEventListener("click", function () {
+        shareMaterial(item.title, item.downloadUrl);
+      });
+      actions.appendChild(shareBtn);
+    }
+
     card.appendChild(actions);
 
     card.appendChild(
@@ -133,6 +264,112 @@
     );
 
     return card;
+  }
+
+  /**
+   * حساب إحصاءات المكتبة (المشاريع، الأقسام، المواد، المتاحة، قيد
+   * التجهيز) اعتمادًا فقط على المتغيرات الموجودة في data/materials.js.
+   * لا يُنشئ أي نسخة موازية من البيانات ولا يحسب أي شيء غير مطلوب
+   * (لا زيارات، لا قراءات، لا تنزيلات). يُعيد null إذا لم تكن البيانات
+   * الأساسية (PROJECTS أو MATERIALS) جاهزة كمصفوفات صالحة.
+   */
+  function computeLibraryStats() {
+    if (typeof PROJECTS === "undefined" || !Array.isArray(PROJECTS)) {
+      return null;
+    }
+    if (typeof MATERIALS === "undefined" || !Array.isArray(MATERIALS)) {
+      return null;
+    }
+
+    const projectsCount = PROJECTS.length;
+    const materialsCount = MATERIALS.length;
+    const availableCount = MATERIALS.filter(function (m) {
+      return m.status === "available";
+    }).length;
+    const pendingCount = MATERIALS.filter(function (m) {
+      return m.status === "pending";
+    }).length;
+
+    // الأقسام: تُحسب من SECTIONS عند وجودها وعدم كونها فارغة، مع إزالة
+    // التكرار حسب مجموعة (المشروع + اسم القسم). إن لم توجد SECTIONS أو
+    // كانت فارغة، تُحسب بدلاً من ذلك من قيمة section داخل كل مادة في
+    // MATERIALS، مع إزالة التكرار حسب القيمة نفسها.
+    let sectionsCount;
+    if (typeof SECTIONS !== "undefined" && Array.isArray(SECTIONS) && SECTIONS.length > 0) {
+      const seenSections = {};
+      let uniqueCount = 0;
+      SECTIONS.forEach(function (s) {
+        const key = (s.project || "") + "||" + (s.name || "");
+        if (!seenSections[key]) {
+          seenSections[key] = true;
+          uniqueCount += 1;
+        }
+      });
+      sectionsCount = uniqueCount;
+    } else {
+      const seenNames = {};
+      let uniqueCount2 = 0;
+      MATERIALS.forEach(function (m) {
+        if (m.section && !seenNames[m.section]) {
+          seenNames[m.section] = true;
+          uniqueCount2 += 1;
+        }
+      });
+      sectionsCount = uniqueCount2;
+    }
+
+    return {
+      projects: projectsCount,
+      sections: sectionsCount,
+      materials: materialsCount,
+      available: availableCount,
+      pending: pendingCount,
+    };
+  }
+
+  /**
+   * عرض بطاقة "إحصاءات المكتبة" في الحاوية المعطاة، بالاعتماد كليًا على
+   * computeLibraryStats. عند تعذر حساب الإحصاءات (بيانات غير جاهزة أو
+   * خطأ غير متوقع)، تُعرض عبارة توضيحية بدل أي أرقام وهمية أو أصفار
+   * غير حقيقية، ولا يتوقف تنفيذ باقي الصفحة.
+   */
+  function renderLibraryStats(container) {
+    if (!container) return;
+
+    let stats = null;
+    try {
+      stats = computeLibraryStats();
+    } catch (err) {
+      stats = null;
+    }
+
+    if (!stats) {
+      container.classList.add("stats-card--error");
+      container.appendChild(
+        el("p", { class: "stats-error-message" }, "تعذر تحميل إحصاءات المكتبة حاليًا.")
+      );
+      return;
+    }
+
+    container.appendChild(el("h2", { class: "stats-card-title" }, "إحصاءات المكتبة"));
+
+    const grid = el("dl", { class: "stats-grid" });
+    const entries = [
+      { label: "المشاريع", value: stats.projects },
+      { label: "الأقسام", value: stats.sections },
+      { label: "المواد", value: stats.materials },
+      { label: "المواد المتاحة", value: stats.available },
+      { label: "المواد قيد التجهيز", value: stats.pending },
+    ];
+
+    entries.forEach(function (entry) {
+      const item = el("div", { class: "stat-item" });
+      item.appendChild(el("dd", { class: "stat-value" }, String(entry.value)));
+      item.appendChild(el("dt", { class: "stat-label" }, entry.label));
+      grid.appendChild(item);
+    });
+
+    container.appendChild(grid);
   }
 
   /**
@@ -424,17 +661,13 @@
     });
   }
 
-  /**
-   * نقطة الدخول الفعلية للعرض. لا نعتمد فقط على حدث DOMContentLoaded
-   * لأن هذا الملف قد يُحمَّل ديناميكيًا (بعد إنشاء عنصر <script> عبر
-   * JavaScript، كما يحدث الآن لتفادي التخزين المؤقت القديم لملفي
-   * data/materials.js وapp.js) في وقت متأخر يكون فيه هذا الحدث قد
-   * أُطلق بالفعل قبل أن يُسجَّل المستمع هنا، فلا يُستدعى أبدًا. لذلك
-   * نتحقق من حالة المستند: إن كان لا يزال قيد التحميل ننتظر الحدث كما
-   * كان معتمدًا سابقًا، وإلا (المستند جاهز فعلاً) ننفّذ العرض فورًا.
-   */
-  function initApp() {
+  document.addEventListener("DOMContentLoaded", function () {
     setCurrentYear();
+
+    const statsCard = document.getElementById("library-stats");
+    if (statsCard) {
+      renderLibraryStats(statsCard);
+    }
 
     const showcase = document.getElementById("featured-projects");
     if (showcase) {
@@ -446,11 +679,5 @@
       const slug = materialList.getAttribute("data-project-slug");
       renderMaterialList(materialList, slug);
     }
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initApp);
-  } else {
-    initApp();
-  }
+  });
 })();

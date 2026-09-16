@@ -303,6 +303,75 @@ section {
   flex-grow: 1;
 }
 
+/* ===== إحصاءات المكتبة ===== */
+
+.library-stats-section {
+  padding-block: 0 8px;
+}
+
+.stats-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(13, 53, 16, 0.06), 0 6px 18px rgba(13, 53, 16, 0.07);
+  padding: 24px;
+}
+
+.stats-card-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: 1.15rem;
+  margin: 0 0 18px;
+  padding-inline-start: 12px;
+  border-inline-start: 4px solid var(--gold);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 14px;
+  margin: 0;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  padding: 14px 8px;
+  background: var(--panel-alt);
+  border-radius: 10px;
+  min-width: 0;
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.6rem;
+  line-height: 1.2;
+  color: var(--green-deep);
+  margin: 0;
+}
+
+.stat-label {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.stats-card--error {
+  text-align: center;
+}
+
+.stats-error-message {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
 /* ===== قائمة المواد ===== */
 
 #material-list {
@@ -579,6 +648,50 @@ section {
 .btn--secondary:hover {
   background: var(--gold);
   color: var(--green-deep);
+}
+
+/* ===== نافذة المشاركة البديلة ===== */
+
+.share-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 53, 16, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+.share-modal {
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 8px 30px rgba(13, 53, 16, 0.25);
+}
+
+.share-modal h3 {
+  margin: 0 0 16px;
+  color: var(--green-deep);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.share-modal-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.share-modal-option {
+  width: 100%;
+}
+
+.share-modal-close {
+  width: 100%;
 }
 
 /* ===== تذييل الصفحة ===== */

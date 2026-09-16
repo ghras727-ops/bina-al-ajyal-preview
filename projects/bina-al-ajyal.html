@@ -65,22 +65,7 @@
     </div>
   </footer>
 
-  <script>
-    (function () {
-      // منع تخزين المتصفح أو شبكة توزيع GitHub Pages نسخة قديمة
-      // من بيانات المواد أو منطق العرض: كل تحميل صفحة يجلب النسخة
-      // الحالية فعليًا عبر طابع زمني فريد في رابط كل ملف، بدل نسخة
-      // قد تكون محفوظة مؤقتًا من زيارة سابقة وتُظهر عددًا أقل من المواد.
-      var v = Date.now();
-      var dataScript = document.createElement("script");
-      dataScript.src = "../data/materials.js?v=" + v;
-      dataScript.onload = function () {
-        var appScript = document.createElement("script");
-        appScript.src = "../assets/js/app.js?v=" + v;
-        document.body.appendChild(appScript);
-      };
-      document.body.appendChild(dataScript);
-    })();
-  </script>
+  <script src="../data/materials.js"></script>
+  <script src="../assets/js/app.js"></script>
 </body>
 </html>
