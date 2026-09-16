@@ -135,7 +135,192 @@
     return card;
   }
 
-  /** بناء قائمة المواد الخاصة بمشروع محدد */
+  /**
+   * صياغة عدد المواد بشكل موجز ("5 مواد"، "1 مادة"، "0 مواد")، لعرضه
+   * إلى جانب عنوان كل قسم في الـ Accordion.
+   */
+  function materialsCountLabel(count) {
+    if (count === 1) return "1 مادة";
+    return String(count) + " مواد";
+  }
+
+  /**
+   * تجميع مواد قسم واحد حسب "track" (تجميع ثابت غير تفاعلي، كما كان
+   * معتمدًا سابقًا)، وإلحاقها داخل الحاوية المعطاة. المواد التي لا تملك
+   * track تُعرض مباشرة بلا عنوان مسار.
+   */
+  function appendSectionMaterials(container, sectionItems) {
+    const trackOrder = [];
+    const trackGroups = {};
+    const noTrackItems = [];
+
+    sectionItems.forEach(function (item) {
+      if (item.track) {
+        if (!trackGroups[item.track]) {
+          trackGroups[item.track] = [];
+          trackOrder.push(item.track);
+        }
+        trackGroups[item.track].push(item);
+      } else {
+        noTrackItems.push(item);
+      }
+    });
+
+    const listWrap = el("div", { class: "material-section" });
+
+    noTrackItems.forEach(function (item) {
+      listWrap.appendChild(buildMaterialCard(item));
+    });
+
+    trackOrder.forEach(function (trackName) {
+      const trackWrap = el("div", { class: "material-track" });
+      trackWrap.appendChild(el("h3", { class: "track-heading" }, trackName));
+      trackGroups[trackName].forEach(function (item) {
+        trackWrap.appendChild(buildMaterialCard(item));
+      });
+      listWrap.appendChild(trackWrap);
+    });
+
+    container.appendChild(listWrap);
+  }
+
+  /**
+   * تعطيل قابلية التركيز (Tab) لأي رابط أو زر داخل منطقة قسم مغلقة، مع
+   * حفظ قيمة tabindex الأصلية (إن وُجدت) لاستعادتها عند إعادة الفتح.
+   * هذا يمنع وصول لوحة المفاتيح إلى مواد قسم مغلق دون التأثير على أي
+   * بيانات أو عناصر أخرى.
+   */
+  function disablePanelFocus(panel) {
+    const focusables = panel.querySelectorAll("a[href], button, [tabindex]");
+    focusables.forEach(function (node) {
+      if (!node.hasAttribute("data-accordion-had-tabindex")) {
+        node.setAttribute(
+          "data-accordion-had-tabindex",
+          node.hasAttribute("tabindex") ? node.getAttribute("tabindex") : ""
+        );
+      }
+      node.setAttribute("tabindex", "-1");
+    });
+  }
+
+  /** استعادة قابلية التركيز الأصلية لعناصر منطقة قسم أُعيد فتحها. */
+  function enablePanelFocus(panel) {
+    const focusables = panel.querySelectorAll("[data-accordion-had-tabindex]");
+    focusables.forEach(function (node) {
+      const original = node.getAttribute("data-accordion-had-tabindex");
+      if (original === "") {
+        node.removeAttribute("tabindex");
+      } else {
+        node.setAttribute("tabindex", original);
+      }
+      node.removeAttribute("data-accordion-had-tabindex");
+    });
+  }
+
+  /** بناء عنصر Accordion واحد (زر القسم + منطقة مواده) دون فتحه. */
+  function buildAccordionItem(descriptor, index, projectSlug) {
+    const buttonId = "accordion-trigger-" + projectSlug + "-" + index;
+    const panelId = "accordion-panel-" + projectSlug + "-" + index;
+
+    const item = el("div", { class: "accordion-item" });
+
+    const heading = el("h2", { class: "accordion-heading" });
+    const button = el("button", {
+      type: "button",
+      class: "accordion-trigger",
+      id: buttonId,
+      "aria-expanded": "false",
+      "aria-controls": panelId,
+    });
+
+    button.appendChild(el("span", { class: "accordion-title" }, descriptor.name));
+
+    const meta = el("span", { class: "accordion-meta" });
+    meta.appendChild(
+      el("span", { class: "accordion-count" }, materialsCountLabel(descriptor.materials.length))
+    );
+    meta.appendChild(el("span", { class: "accordion-icon", "aria-hidden": "true" }));
+    button.appendChild(meta);
+
+    heading.appendChild(button);
+    item.appendChild(heading);
+
+    const panel = el("div", {
+      class: "accordion-panel",
+      id: panelId,
+      role: "region",
+      "aria-labelledby": buttonId,
+      "aria-hidden": "true",
+    });
+
+    const inner = el("div", { class: "accordion-panel-inner" });
+
+    if (descriptor.description) {
+      inner.appendChild(el("p", { class: "accordion-description" }, descriptor.description));
+    }
+
+    if (descriptor.materials.length === 0) {
+      inner.appendChild(
+        el("p", { class: "empty-state" }, "لا توجد مواد مضافة إلى هذا القسم حاليًا.")
+      );
+    } else {
+      appendSectionMaterials(inner, descriptor.materials);
+    }
+
+    panel.appendChild(inner);
+    item.appendChild(panel);
+
+    // الحالة الابتدائية: القسم مغلق دائمًا، ومواده غير قابلة للوصول عبر
+    // لوحة المفاتيح حتى يُفتح.
+    disablePanelFocus(panel);
+
+    return { item: item, button: button, panel: panel };
+  }
+
+  /** تبديل حالة فتح/إغلاق عنصر Accordion واحد، مع تحديث aria-expanded. */
+  function setAccordionItemOpen(controller, isOpen) {
+    controller.button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    controller.panel.classList.toggle("is-open", isOpen);
+    if (isOpen) {
+      controller.panel.removeAttribute("aria-hidden");
+      enablePanelFocus(controller.panel);
+    } else {
+      controller.panel.setAttribute("aria-hidden", "true");
+      disablePanelFocus(controller.panel);
+    }
+  }
+
+  /**
+   * بناء Accordion كامل لأقسام مشروع واحد، وإلحاقه بالحاوية. قسم واحد
+   * فقط يبقى مفتوحًا في الوقت نفسه: فتح أي قسم يُغلق كل الأقسام الأخرى،
+   * والضغط على القسم المفتوح نفسه يُغلقه.
+   */
+  function renderAccordion(container, sectionDescriptors, projectSlug) {
+    const wrap = el("div", { class: "accordion" });
+    const controllers = [];
+
+    sectionDescriptors.forEach(function (descriptor, index) {
+      const built = buildAccordionItem(descriptor, index, projectSlug);
+      controllers.push(built);
+      wrap.appendChild(built.item);
+    });
+
+    controllers.forEach(function (controller) {
+      controller.button.addEventListener("click", function () {
+        const isOpen = controller.button.getAttribute("aria-expanded") === "true";
+        controllers.forEach(function (other) {
+          if (other !== controller) {
+            setAccordionItemOpen(other, false);
+          }
+        });
+        setAccordionItemOpen(controller, !isOpen);
+      });
+    });
+
+    container.appendChild(wrap);
+  }
+
+  /** بناء قائمة المواد الخاصة بمشروع محدد، مع عرض أقسامها كـ Accordion. */
   function renderMaterialList(container, projectSlug) {
     if (!container || typeof MATERIALS === "undefined") return;
 
@@ -143,7 +328,18 @@
       return m.project === projectSlug;
     });
 
-    if (items.length === 0) {
+    // بيانات الأقسام الوصفية (الاسم، الوصف، الترتيب) إن وُجد ملف SECTIONS
+    // ضمن data/materials.js لهذا المشروع. هذا الحقل اختياري تمامًا: أي
+    // بيانات قديمة بلا SECTIONS تستمر بالعمل عبر ترتيب ظهور الأقسام في
+    // المواد نفسها.
+    const projectSections =
+      typeof SECTIONS !== "undefined"
+        ? SECTIONS.filter(function (s) {
+            return s.project === projectSlug;
+          })
+        : [];
+
+    if (items.length === 0 && projectSections.length === 0) {
       const empty = el(
         "p",
         { class: "empty-state" },
@@ -154,9 +350,9 @@
     }
 
     // المواد التي لا تملك حقل "section" تُعرض بالطريقة القديمة المسطّحة
-    // (بلا أي عنوان قسم)، حفاظًا على التوافق مع أي بيانات قديمة لا تستخدم
-    // هذا الحقل. المواد التي تملك "section" تُجمع تحت عنوان قسمها، بترتيب
-    // ظهور كل قسم لأول مرة داخل مصفوفة MATERIALS.
+    // (بلا أي عنوان قسم وبلا Accordion)، حفاظًا على التوافق مع أي بيانات
+    // قديمة لا تستخدم هذا الحقل. المواد التي تملك "section" تُجمع تحت
+    // اسم قسمها، بترتيب ظهور كل قسم لأول مرة داخل مصفوفة MATERIALS.
     const unsectioned = [];
     const sectionOrder = [];
     const sectionGroups = {};
@@ -177,44 +373,44 @@
       container.appendChild(buildMaterialCard(item));
     });
 
-    sectionOrder.forEach(function (sectionName) {
-      const sectionWrap = el("div", { class: "material-section" });
-      sectionWrap.appendChild(el("h2", { class: "section-heading" }, sectionName));
-
-      // تجميع ثابت (غير تفاعلي) حسب "track" داخل القسم، بترتيب ظهور كل
-      // مسار لأول مرة في مصفوفة المواد. المواد التي لا تملك track (مثل
-      // مواد القسم الأول) تُعرض مباشرة بلا عنوان مسار.
-      const trackOrder = [];
-      const trackGroups = {};
-      const noTrackItems = [];
-
-      sectionGroups[sectionName].forEach(function (item) {
-        if (item.track) {
-          if (!trackGroups[item.track]) {
-            trackGroups[item.track] = [];
-            trackOrder.push(item.track);
-          }
-          trackGroups[item.track].push(item);
-        } else {
-          noTrackItems.push(item);
-        }
-      });
-
-      noTrackItems.forEach(function (item) {
-        sectionWrap.appendChild(buildMaterialCard(item));
-      });
-
-      trackOrder.forEach(function (trackName) {
-        const trackWrap = el("div", { class: "material-track" });
-        trackWrap.appendChild(el("h3", { class: "track-heading" }, trackName));
-        trackGroups[trackName].forEach(function (item) {
-          trackWrap.appendChild(buildMaterialCard(item));
-        });
-        sectionWrap.appendChild(trackWrap);
-      });
-
-      container.appendChild(sectionWrap);
+    // أي قسم مُعرَّف في SECTIONS لهذا المشروع ولا يملك أي مادة بعد يُضاف
+    // أيضًا، ليظهر في الـ Accordion بعدد مواد صفر بدل أن يختفي بلا سبب.
+    const sectionMetaByName = {};
+    projectSections.forEach(function (s) {
+      sectionMetaByName[s.name] = s;
+      if (!sectionGroups[s.name]) {
+        sectionGroups[s.name] = [];
+        sectionOrder.push(s.name);
+      }
     });
+
+    if (sectionOrder.length === 0) {
+      return;
+    }
+
+    // ترتيب الأقسام: يُعتمد حقل "order" من SECTIONS عند توفره لكل الأقسام
+    // القابلة للمقارنة به، وإلا يُحافظ على ترتيب ظهور القسم لأول مرة.
+    const sectionDescriptors = sectionOrder.map(function (name, idx) {
+      const meta = sectionMetaByName[name];
+      return {
+        name: name,
+        description: meta && meta.description ? meta.description : "",
+        order: meta && typeof meta.order === "number" ? meta.order : null,
+        insertionIndex: idx,
+        materials: sectionGroups[name],
+      };
+    });
+
+    sectionDescriptors.sort(function (a, b) {
+      const aHas = a.order !== null;
+      const bHas = b.order !== null;
+      if (aHas && bHas) return a.order - b.order || a.insertionIndex - b.insertionIndex;
+      if (aHas) return -1;
+      if (bHas) return 1;
+      return a.insertionIndex - b.insertionIndex;
+    });
+
+    renderAccordion(container, sectionDescriptors, projectSlug);
   }
 
   /** تعيين السنة الحالية ديناميكيًا في كل عنصر يحمل الصنف current-year،

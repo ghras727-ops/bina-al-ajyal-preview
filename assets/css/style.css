@@ -417,6 +417,131 @@ section {
   padding-block: 12px;
 }
 
+/* ===== أقسام المشروع القابلة للطي (Accordion) ===== */
+
+.accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.accordion-item {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(13, 53, 16, 0.05), 0 4px 14px rgba(13, 53, 16, 0.06);
+  overflow: hidden;
+}
+
+.accordion-heading {
+  margin: 0;
+}
+
+.accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  /* شريط القسم بلون الهوية الذهبي/البرتقالي بدل الأبيض، مع نص أخضر داكن
+     لضمان تباين واضح وسهولة قراءة. */
+  background: var(--gold);
+  border: none;
+  margin: 0;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: 1.1rem;
+  text-align: start;
+  padding: 20px 24px;
+  min-height: 44px;
+  transition: background-color 120ms ease;
+}
+
+.accordion-trigger:hover {
+  background: var(--olive-yellow);
+}
+
+.accordion-trigger:focus-visible {
+  outline: 3px solid var(--green-deep);
+  outline-offset: -3px;
+}
+
+.accordion-title {
+  flex: 1 1 auto;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.accordion-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.accordion-count {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--green-deep);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(13, 53, 16, 0.28);
+  border-radius: 999px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
+/* سهم بسيط مبني من حدود العنصر، يدور عند فتح القسم، بلا أي أيقونة خارجية */
+.accordion-icon {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-inline-end: 2px solid var(--green-deep);
+  border-block-end: 2px solid var(--green-deep);
+  transform: rotate(45deg);
+  margin-block-start: -4px;
+  transition: transform 200ms ease;
+}
+
+.accordion-trigger[aria-expanded="true"] .accordion-icon {
+  transform: rotate(225deg);
+  margin-block-start: 4px;
+}
+
+/* انتقال سلس وبسيط لفتح/إغلاق منطقة المواد، بالاعتماد على grid بدل
+   حساب ارتفاع بالجافاسكريبت، لتفادي أي قفزات في الصفحة. */
+.accordion-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 220ms ease;
+}
+
+.accordion-panel.is-open {
+  grid-template-rows: 1fr;
+}
+
+.accordion-panel-inner {
+  overflow: hidden;
+  padding: 4px 24px 24px;
+}
+
+.accordion-description {
+  color: var(--ink-soft);
+  max-width: var(--paper-text-max-width);
+  margin: 0 0 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .accordion-panel {
+    transition: none;
+  }
+  .accordion-icon {
+    transition: none;
+  }
+}
+
 /* ===== الأزرار ===== */
 
 .btn {
@@ -514,5 +639,17 @@ section {
   }
   .material-actions {
     flex-direction: column;
+  }
+  .accordion-trigger {
+    flex-wrap: wrap;
+    row-gap: 10px;
+    padding: 16px 18px;
+    font-size: 1.02rem;
+  }
+  .accordion-meta {
+    margin-inline-start: auto;
+  }
+  .accordion-panel-inner {
+    padding: 4px 18px 20px;
   }
 }

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>مشروع صناعة منهج تربوي متكامل للمراكز الصيفية — مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية</title>
+  <meta
+    name="description"
+    content="مشروع صناعة منهج تربوي متكامل للمراكز الصيفية، أحد مشاريع مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية. يهدف مشروع «صناعة منهج تربوي متكامل للمراكز الصيفية للفئة العمرية (7–10) سنوات» إلى بناء شخصية الطفل بناءً متوازناً في الجوانب الإيمانية والسلوكية والفكرية والنفسية والمهارية والبدنية، عبر منهج تربوي محبب يراعي خصائص المرحلة العمرية، ويعزز محبة الله، والاعتزاز بالدين والهوية، وحسن الخلق، والتفاعل الإيجابي مع الحياة."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="brand-logo">
+        <img
+          src="../assets/images/institution-logo.png"
+          alt="شعار مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية"
+          class="institution-logo"
+          onerror="this.hidden=true; var f=document.getElementById('logoFallbackProject'); if (f) { f.style.display='flex'; }"
+        />
+        <span id="logoFallbackProject" class="logo-fallback" role="img" aria-label="مساحة محجوزة لشعار المؤسسة، لم يُرفع ملف الشعار بعد">شعار المؤسسة</span>
+      </div>
+      <div class="site-header-text">
+        <p class="site-title">
+          <a href="../index.html">مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية</a>
+        </p>
+        <p class="institution-name">مؤسسة تنمية الشبابية الاجتماعية</p>
+        <p class="breadcrumb"><a href="../index.html">الرئيسية</a> ← مشروع صناعة منهج تربوي متكامل للمراكز الصيفية</p>
+      </div>
+    </div>
+  </header>
+
+  <section class="page-intro">
+    <div class="container">
+      <h1>مشروع صناعة منهج تربوي متكامل للمراكز الصيفية</h1>
+      <p>يهدف مشروع «صناعة منهج تربوي متكامل للمراكز الصيفية للفئة العمرية (7–10) سنوات» إلى بناء شخصية الطفل بناءً متوازناً في الجوانب الإيمانية والسلوكية والفكرية والنفسية والمهارية والبدنية، عبر منهج تربوي محبب يراعي خصائص المرحلة العمرية، ويعزز محبة الله، والاعتزاز بالدين والهوية، وحسن الخلق، والتفاعل الإيجابي مع الحياة.</p>
+      <p>اضغط على اسم المادة لتنزيلها إن كانت متاحة؛ المواد التي لم تُرفع بعد تظهر بعبارة "قيد التجهيز".</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div id="material-list" data-project-slug="integrated-educational-curriculum-summer-centers-ages-7-10"></div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>
+        مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية — قد يفتح المتصفح
+        الملف في تبويب بدل تنزيله تلقائيًا؛ هذا يعتمد على إعدادات المتصفح
+        لا على الموقع.
+      </p>
+      <p class="footer-copyright">
+        © <span class="current-year"></span> مؤسسة تنمية الشبابية الاجتماعية. جميع الحقوق محفوظة.
+      </p>
+    </div>
+  </footer>
+
+  <script src="../data/materials.js"></script>
+  <script src="../assets/js/app.js"></script>
+</body>
+</html>
