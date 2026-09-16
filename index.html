@@ -41,13 +41,6 @@
   <section class="hero">
     <div class="container">
       <h1>مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية</h1>
-      <p>
-        فهرس رقمي لمشاريع المؤسسة وبرامجها ومواد كل مشروع. كل مادة هنا لها
-        بطاقة تحمل اسمها ووصفها وزر تنزيل مباشر عند توفره. الملفات نفسها لا
-        تُستضاف على هذا الموقع؛ تبقى على أرشيف خارجي (Internet Archive)،
-        ويكتفي هذا الفهرس بالربط المباشر بها دون أي صفحة بحث أو صفحة
-        تفاصيل أو إعلانات في الطريق.
-      </p>
     </div>
   </section>
 
@@ -60,18 +53,28 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>
-        مشاريع وبرامج مؤسسة تنمية الشبابية الاجتماعية — موقع ثابت بلا قاعدة
-        بيانات ولا تسجيل دخول. لإضافة مشروع أو مادة جديدة، راجع ملف
-        README.md المرفق مع الموقع.
-      </p>
       <p class="footer-copyright">
         © <span class="current-year"></span> مؤسسة تنمية الشبابية الاجتماعية. جميع الحقوق محفوظة.
       </p>
     </div>
   </footer>
 
-  <script src="data/materials.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script>
+    (function () {
+      // منع تخزين المتصفح أو شبكة توزيع GitHub Pages نسخة قديمة
+      // من بيانات المواد أو منطق العرض: كل تحميل صفحة يجلب النسخة
+      // الحالية فعليًا عبر طابع زمني فريد في رابط كل ملف، بدل نسخة
+      // قد تكون محفوظة مؤقتًا من زيارة سابقة وتُظهر عددًا أقل من المواد.
+      var v = Date.now();
+      var dataScript = document.createElement("script");
+      dataScript.src = "data/materials.js?v=" + v;
+      dataScript.onload = function () {
+        var appScript = document.createElement("script");
+        appScript.src = "assets/js/app.js?v=" + v;
+        document.body.appendChild(appScript);
+      };
+      document.body.appendChild(dataScript);
+    })();
+  </script>
 </body>
 </html>

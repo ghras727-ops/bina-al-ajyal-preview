@@ -424,7 +424,16 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  /**
+   * نقطة الدخول الفعلية للعرض. لا نعتمد فقط على حدث DOMContentLoaded
+   * لأن هذا الملف قد يُحمَّل ديناميكيًا (بعد إنشاء عنصر <script> عبر
+   * JavaScript، كما يحدث الآن لتفادي التخزين المؤقت القديم لملفي
+   * data/materials.js وapp.js) في وقت متأخر يكون فيه هذا الحدث قد
+   * أُطلق بالفعل قبل أن يُسجَّل المستمع هنا، فلا يُستدعى أبدًا. لذلك
+   * نتحقق من حالة المستند: إن كان لا يزال قيد التحميل ننتظر الحدث كما
+   * كان معتمدًا سابقًا، وإلا (المستند جاهز فعلاً) ننفّذ العرض فورًا.
+   */
+  function initApp() {
     setCurrentYear();
 
     const showcase = document.getElementById("featured-projects");
@@ -437,5 +446,11 @@
       const slug = materialList.getAttribute("data-project-slug");
       renderMaterialList(materialList, slug);
     }
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initApp);
+  } else {
+    initApp();
+  }
 })();
