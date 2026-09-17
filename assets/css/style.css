@@ -713,6 +713,20 @@ section {
   border-top: 1px solid rgba(243, 246, 238, 0.18);
 }
 
+/* زر اختياري صغير لإعادة تحميل الصفحة يدويًا؛ منخفض البروز عمدًا لأنه
+   ليس مطلوبًا في الاستخدام العادي (انظر assets/js/site-refresh.js). */
+.site-refresh-btn {
+  margin-top: 14px;
+  min-height: 34px;
+  padding: 6px 18px;
+  font-size: 0.82rem;
+  opacity: 0.85;
+}
+
+.site-refresh-btn:hover {
+  opacity: 1;
+}
+
 /* ===== صفحة 404 ===== */
 
 .not-found {
