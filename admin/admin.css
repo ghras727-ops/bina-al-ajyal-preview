@@ -6,9 +6,9 @@
 :root {
   --dark-green: #0d3510;
   --gold: #eea74b;
-  --mid-green: #58ad23;
+  --mid-green: #3a7018;
   --olive: #c2c947;
-  --slate-blue: #7f97a1;
+  --slate-blue: #4f6a75;
 
   --bg: #f4f6f4;
   --surface: #ffffff;
@@ -38,6 +38,9 @@ body {
   color: var(--text-main);
   font-family: var(--font-body);
   line-height: 1.6;
+  /* يمنع أي تمرير أفقي غير مقصود ناتج عن محتوى طويل غير قابل للكسر
+     (مثل روابط أو معرّفات طويلة). */
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4 {
@@ -57,6 +60,26 @@ code {
   font-size: 0.9em;
   direction: ltr;
   display: inline-block;
+  /* يمنع نصوص/معرّفات/روابط طويلة غير قابلة للكسر من التسبب بتمرير
+     أفقي غير مقصود، خصوصًا على الهاتف. */
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  max-width: 100%;
+}
+
+/* حلقة تركيز واضحة (:focus-visible) لكل العناصر التفاعلية عند
+   التنقّل بلوحة المفاتيح: حلقة داخلية بيضاء + حلقة خارجية بلون
+   المؤسسة الأخضر الداكن، لتبقى مرئية بوضوح بغض النظر عن لون خلفية
+   العنصر نفسه (أزرار داكنة أو ذهبية أو خضراء أو شفافة). لا تظهر هذه
+   الحلقة عند التركيز بالفأرة، فقط عند التنقّل بلوحة المفاتيح، بفضل
+   دعم المتصفحات الحديثة لـ :focus-visible.
+   ملاحظة: حقول الإدخال (input/textarea/select) تحتفظ بحلقة التركيز
+   الخاصة بها المعرّفة أدناه، فوق هذه الحلقة العامة. */
+:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 1px;
+  box-shadow: 0 0 0 5px var(--dark-green);
+  border-radius: 4px;
 }
 
 /* ---------- رأس الصفحة ---------- */
@@ -187,6 +210,119 @@ code {
 
 .view[hidden] {
   display: none;
+}
+
+/* ---------- البحث داخل لوحة الإدارة ---------- */
+
+.admin-search-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-search-panel[hidden] {
+  display: none;
+}
+
+.admin-search-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.65rem;
+}
+
+.admin-search-heading h2 {
+  font-size: 1rem;
+  margin-bottom: 0.1rem;
+}
+
+.admin-search-panel > label,
+.search-field-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0.55rem 0 0.25rem;
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.65rem;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.search-results-inline {
+  max-height: 190px;
+}
+
+.search-result-item {
+  width: 100%;
+  text-align: start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcfb;
+  color: var(--text-main);
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.search-result-item:hover,
+.search-result-item:focus {
+  background: #eef4ea;
+  border-color: var(--mid-green);
+}
+
+.search-focus {
+  animation: search-focus-pulse 1.8s ease-in-out 2;
+}
+
+@keyframes search-focus-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(88, 173, 35, 0); }
+  25%, 75% { box-shadow: 0 0 0 5px rgba(88, 173, 35, 0.58); }
+  50% { box-shadow: 0 0 0 0 rgba(88, 173, 35, 0); }
+}
+
+.search-highlight {
+  background: #ffe08a;
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 0.08em;
+}
+
+.search-result-name {
+  display: block;
+  font-weight: 700;
+  color: var(--dark-green);
+}
+
+.search-result-meta {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+
+.search-result-type {
+  color: var(--mid-green);
+  font-weight: 700;
+}
+
+.search-empty {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  padding: 0.45rem 0;
+}
+
+.inline-search-input {
+  font-size: 0.84rem;
+  padding: 0.42rem 0.6rem;
 }
 
 /* ---------- أزرار ---------- */
@@ -877,6 +1013,8 @@ select:focus {
   background: #f4f6f4;
   color: var(--text-muted);
   font-size: 0.92rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .delete-warning-box {
@@ -926,5 +1064,33 @@ select:focus {
 
   .view-list-toolbar .btn {
     width: 100%;
+  }
+
+  /* مساحة لمس مناسبة (٤٤ بكسل تقريبًا) لكل الأزرار على الهاتف. */
+  .btn {
+    min-height: 44px;
+    padding-block: 0.65rem;
+  }
+
+  .btn-small {
+    min-height: 40px;
+  }
+
+  .modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .search-result-item {
+    min-height: 44px;
+  }
+
+  /* السماح لتسميات تفاصيل المادة بالالتفاف بدل فرض عرض واسع قد
+     يسبب تمريرًا أفقيًا غير مقصود على الشاشات الضيقة. */
+  .view-material-details dt {
+    white-space: normal;
   }
 }

@@ -22,7 +22,7 @@
       <div class="brand-logo">
         <img
           src="assets/images/institution-logo.png"
-          alt="شعار مؤسسة تنمية الشبابية الاجتماعية"
+          alt="شعار المؤسسة"
           class="institution-logo"
           onerror="this.hidden=true; var f=document.getElementById('logoFallbackHome'); if (f) { f.style.display='flex'; }"
         />
@@ -44,9 +44,43 @@
     </div>
   </section>
 
+  <section class="site-search-section">
+    <div class="container">
+      <div class="site-search" id="site-search">
+        <label for="site-search-input" class="visually-hidden">البحث في الموقع</label>
+        <input
+          type="text"
+          id="site-search-input"
+          class="site-search-input"
+          placeholder="ابحث في المشاريع والأقسام والمواد..."
+          autocomplete="off"
+          spellcheck="false"
+          role="combobox"
+          aria-expanded="false"
+          aria-haspopup="listbox"
+          aria-controls="site-search-results"
+          aria-autocomplete="list"
+        />
+        <div
+          class="site-search-results"
+          id="site-search-results"
+          role="listbox"
+          aria-label="نتائج البحث"
+          hidden
+        ></div>
+      </div>
+    </div>
+  </section>
+
   <section class="library-stats-section">
     <div class="container">
       <div class="stats-card" id="library-stats" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="recent-updates-section">
+    <div class="container">
+      <div id="recent-updates"></div>
     </div>
   </section>
 

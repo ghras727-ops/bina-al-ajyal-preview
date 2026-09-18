@@ -19,7 +19,9 @@
     save: "/admin/api/save",
     projects: "/admin/api/projects",
     projectsUpdate: "/admin/api/projects/update",
+    projectsDelete: "/admin/api/projects/delete",
     sectionsUpdate: "/admin/api/sections/update",
+    sectionsDelete: "/admin/api/sections/delete",
   };
 
   const CONFIRM_TOKEN = "LOCAL_ADMIN_SAVE_TEST";
@@ -41,6 +43,12 @@
 
   let dirty = false;
   let currentProjectSlug = null;
+  let pendingDetailFocus = null;
+
+  // العنصر الذي كان يحمل التركيز قبل فتح آخر نافذة منبثقة، لإعادة
+  // التركيز إليه تلقائيًا عند الإغلاق (بالإغلاق بالزر أو Escape أو
+  // النقر خارج النافذة).
+  let lastFocusedBeforeModal = null;
 
   // -------------------------------------------------------------
   // أدوات DOM مساعدة (آمنة من XSS — بلا أي innerHTML لنص المستخدم)
@@ -81,6 +89,19 @@
   function setFieldError(id, message) {
     const node = $(id);
     if (node) node.textContent = message || "";
+    // معرّف الحقل نفسه هو معرّف رسالة الخطأ بعد حذف لاحقة "Error"
+    // (مثال: projectNameError ← projectName)، حسب الاتفاق المستخدم في
+    // admin/index.html. نستخدم هذا لتحديث aria-invalid تلقائيًا دون
+    // الحاجة لتعديل كل نقطة استدعاء لهذه الدالة في الملف.
+    const fieldId = id.replace(/Error$/, "");
+    const field = $(fieldId);
+    if (field) {
+      if (message) {
+        field.setAttribute("aria-invalid", "true");
+      } else {
+        field.removeAttribute("aria-invalid");
+      }
+    }
   }
 
   function clearFieldError(id) {
@@ -108,6 +129,13 @@
     const container = $("notifications");
     const div = document.createElement("div");
     div.className = "notification notification-" + (type === "error" ? "error" : "success");
+    // حاوية #notifications تحمل بالفعل aria-live="polite"، وهذا يكفي
+    // لإعلان رسائل النجاح. رسائل الخطأ تحصل إضافيًا على role="alert"
+    // لتنبيه أكثر إلحاحًا (منطقة حيّة عاجلة مستقلة) دون تغيير أي سلوك
+    // بصري أو منطقي آخر.
+    if (type === "error") {
+      div.setAttribute("role", "alert");
+    }
     div.textContent = message;
     container.appendChild(div);
     const timeout = type === "error" ? 8000 : 5000;
@@ -263,6 +291,7 @@
   function showLoading() {
     $("loadingState").hidden = false;
     $("connectionErrorState").hidden = true;
+    $("globalSearchPanel").hidden = true;
     $("view-list").hidden = true;
     $("view-project").hidden = true;
     $("saveBar").hidden = true;
@@ -270,11 +299,13 @@
 
   function hideLoading() {
     $("loadingState").hidden = true;
+    $("globalSearchPanel").hidden = false;
   }
 
   function showConnectionError(info) {
     $("loadingState").hidden = true;
     $("connectionErrorState").hidden = false;
+    $("globalSearchPanel").hidden = true;
     $("view-list").hidden = true;
     $("view-project").hidden = true;
     $("saveBar").hidden = true;
@@ -308,6 +339,9 @@
     currentProjectSlug = slug;
     renderProjectDetail();
     showView("view-project");
+    // يجب تمرير الصفحة بعد إظهار شاشة المشروع؛ قبل ذلك يكون الهدف مخفيًا
+    // ولا يستطيع المتصفح حساب موضعه أو تمرير الصفحة إليه بشكل صحيح.
+    focusPendingDetail();
   }
 
   // -------------------------------------------------------------
@@ -409,9 +443,245 @@
     });
     actions.appendChild(addMaterialBtn);
 
+    const deleteProjectBtn = document.createElement("button");
+    deleteProjectBtn.type = "button";
+    deleteProjectBtn.className = "btn btn-danger-outline";
+    deleteProjectBtn.textContent = "حذف المشروع";
+    deleteProjectBtn.addEventListener("click", function () {
+      openDeleteProjectModal(p.slug);
+    });
+    actions.appendChild(deleteProjectBtn);
+
     card.appendChild(actions);
 
     return card;
+  }
+
+  // -------------------------------------------------------------
+  // البحث السريع داخل لوحة الإدارة
+  // -------------------------------------------------------------
+
+  function normalizeSearchValue(value) {
+    return String(value === null || value === undefined ? "" : value)
+      .trim()
+      .toLocaleLowerCase("ar");
+  }
+
+  function projectBySlug(slug) {
+    return state.projects.find(function (p) {
+      return p.slug === slug;
+    });
+  }
+
+  function sectionByProjectAndName(project, name) {
+    return state.sections.find(function (s) {
+      return s.project === project && s.name === name;
+    });
+  }
+
+  function projectDisplayName(slug) {
+    const project = projectBySlug(slug);
+    return project ? project.name || project.slug : slug || "غير معروف";
+  }
+
+  function searchProjects(query) {
+    const needle = normalizeSearchValue(query);
+    if (!needle) return [];
+    return state.projects
+      .filter(function (p) {
+        return [p.name, p.description, p.slug, p.id].some(function (value) {
+          return normalizeSearchValue(value).indexOf(needle) !== -1;
+        });
+      })
+      .sort(byProjectOrder)
+      .map(function (p) {
+        return { kind: "project", name: p.name || p.slug, project: p };
+      });
+  }
+
+  function searchSections(query) {
+    const needle = normalizeSearchValue(query);
+    if (!needle) return [];
+    return state.sections
+      .filter(function (s) {
+        return [s.name, s.description, s.project, s.slug].some(function (value) {
+          return normalizeSearchValue(value).indexOf(needle) !== -1;
+        });
+      })
+      .sort(bySectionOrder)
+      .map(function (s) {
+        return {
+          kind: "section",
+          name: s.name,
+          section: s,
+          project: projectBySlug(s.project),
+        };
+      });
+  }
+
+  function searchMaterials(query) {
+    const needle = normalizeSearchValue(query);
+    if (!needle) return [];
+    return state.materials
+      .filter(function (m) {
+        return [m.title, m.description, m.track, m.id, m.slug, m.project, m.section].some(function (value) {
+          return normalizeSearchValue(value).indexOf(needle) !== -1;
+        });
+      })
+      .sort(byMaterialOrder)
+      .map(function (m) {
+        return {
+          kind: "material",
+          name: m.title || m.id,
+          material: m,
+          project: projectBySlug(m.project),
+          section: sectionByProjectAndName(m.project, m.section),
+        };
+      });
+  }
+
+  function searchAll(query) {
+    return searchProjects(query).concat(searchSections(query), searchMaterials(query));
+  }
+
+  function appendHighlightedText(container, value, query) {
+    const text = String(value === null || value === undefined ? "" : value);
+    const needle = normalizeSearchValue(query);
+    if (!needle) {
+      container.textContent = text;
+      return;
+    }
+
+    const comparable = text.toLocaleLowerCase("ar");
+    let cursor = 0;
+    let matchIndex = comparable.indexOf(needle, cursor);
+
+    while (matchIndex !== -1) {
+      if (matchIndex > cursor) {
+        container.appendChild(document.createTextNode(text.slice(cursor, matchIndex)));
+      }
+      const mark = document.createElement("mark");
+      mark.className = "search-highlight";
+      mark.textContent = text.slice(matchIndex, matchIndex + needle.length);
+      container.appendChild(mark);
+      cursor = matchIndex + needle.length;
+      matchIndex = comparable.indexOf(needle, cursor);
+    }
+
+    if (cursor < text.length) {
+      container.appendChild(document.createTextNode(text.slice(cursor)));
+    }
+  }
+
+  function renderSearchResults(container, results, onSelect, query) {
+    clearNode(container);
+    if (!results.length) {
+      const empty = document.createElement("p");
+      empty.className = "search-empty";
+      empty.textContent = "لا توجد نتائج مطابقة.";
+      container.appendChild(empty);
+      container.hidden = false;
+      return;
+    }
+
+    results.forEach(function (result) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "search-result-item";
+      button.setAttribute("role", "option");
+
+      const name = document.createElement("span");
+      name.className = "search-result-name";
+      appendHighlightedText(name, result.name, query);
+      button.appendChild(name);
+
+      const meta = document.createElement("span");
+      meta.className = "search-result-meta";
+      const type =
+        result.kind === "project" ? "مشروع" :
+        result.kind === "section" ? "قسم" : "مادة";
+      const projectSlug = result.kind === "project"
+        ? result.project.slug
+        : result.kind === "section"
+          ? result.section.project
+          : result.material.project;
+      const projectName = result.kind === "project"
+        ? result.project.slug
+        : projectDisplayName(projectSlug);
+      const sectionName =
+        result.kind === "material" && result.material.section
+          ? result.material.section
+          : "";
+      meta.textContent = "";
+      const typeSpan = document.createElement("span");
+      typeSpan.className = "search-result-type";
+      typeSpan.textContent = type;
+      meta.appendChild(typeSpan);
+      meta.appendChild(document.createTextNode(" — المشروع: "));
+      const projectNameSpan = document.createElement("span");
+      appendHighlightedText(projectNameSpan, projectName, query);
+      meta.appendChild(projectNameSpan);
+      if (sectionName) {
+        meta.appendChild(document.createTextNode(" — القسم: "));
+        const sectionNameSpan = document.createElement("span");
+        appendHighlightedText(sectionNameSpan, result.material.section, query);
+        meta.appendChild(sectionNameSpan);
+      }
+      button.appendChild(meta);
+
+      button.addEventListener("click", function () {
+        onSelect(result);
+      });
+      container.appendChild(button);
+    });
+    container.hidden = false;
+  }
+
+  function focusPendingDetail() {
+    if (!pendingDetailFocus) return;
+    const focus = pendingDetailFocus;
+    pendingDetailFocus = null;
+
+    const selector = focus.kind === "section" ? "section" : "material";
+    const nodes = document.querySelectorAll(
+      focus.kind === "section" ? ".section-block" : ".material-card"
+    );
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (
+        (selector === "section" && node.dataset.section === focus.name) ||
+        (selector === "material" && node.dataset.materialId === focus.id)
+      ) {
+        node.scrollIntoView({ behavior: "smooth", block: "center" });
+        node.classList.remove("search-focus");
+        void node.offsetWidth;
+        node.classList.add("search-focus");
+        setTimeout(function () {
+          node.classList.remove("search-focus");
+        }, 3600);
+        break;
+      }
+    }
+  }
+
+  function selectGlobalSearchResult(result) {
+    $("globalSearchInput").value = "";
+    $("globalSearchResults").hidden = true;
+    clearNode($("globalSearchResults"));
+
+    if (result.kind === "project") {
+      openProjectDetail(result.project.slug);
+      return;
+    }
+
+    if (result.kind === "section") {
+      pendingDetailFocus = { kind: "section", name: result.section.name };
+      openProjectDetail(result.section.project);
+      return;
+    }
+
+    pendingDetailFocus = { kind: "material", id: result.material.id };
+    openProjectDetail(result.material.project);
   }
 
   // -------------------------------------------------------------
@@ -462,6 +732,8 @@
   function buildSectionBlock(section, overrideMaterials) {
     const block = document.createElement("div");
     block.className = "section-block";
+    block.dataset.project = section.project || "";
+    block.dataset.section = section.name || "";
 
     const header = document.createElement("div");
     header.className = "section-block-header";
@@ -526,6 +798,15 @@
       });
       sectionActions.appendChild(addMaterialToSectionBtn);
 
+      const deleteSectionBtn = document.createElement("button");
+      deleteSectionBtn.type = "button";
+      deleteSectionBtn.className = "btn btn-danger-outline btn-small";
+      deleteSectionBtn.textContent = "حذف القسم";
+      deleteSectionBtn.addEventListener("click", function () {
+        openDeleteSectionModal(section.project, section.name);
+      });
+      sectionActions.appendChild(deleteSectionBtn);
+
       block.appendChild(sectionActions);
     }
 
@@ -553,6 +834,7 @@
   function buildMaterialListItem(m) {
     const card = document.createElement("div");
     card.className = "material-card";
+    card.dataset.materialId = m.id || "";
 
     const title = document.createElement("p");
     title.className = "material-card-title";
@@ -985,13 +1267,19 @@
 
   function populateProjectSelect(selectEl, selectedSlug) {
     clearNode(selectEl);
+    if (!selectedSlug) {
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "اختر مشروعًا";
+      selectEl.appendChild(placeholder);
+    }
     state.projects.forEach(function (p) {
       const opt = document.createElement("option");
       opt.value = p.slug;
       opt.textContent = (p.name || p.slug) + " (" + p.slug + ")";
       selectEl.appendChild(opt);
     });
-    if (selectedSlug) selectEl.value = selectedSlug;
+    selectEl.value = selectedSlug || "";
   }
 
   function resetAddSectionForm() {
@@ -1195,6 +1483,13 @@
 
   function populateSectionSelect(selectEl, projectSlug, selectedName) {
     clearNode(selectEl);
+    if (!projectSlug) {
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "اختر المشروع أولًا";
+      selectEl.appendChild(opt);
+      return;
+    }
     const secs = state.sections
       .filter(function (s) {
         return s.project === projectSlug;
@@ -1215,16 +1510,105 @@
       opt.textContent = s.name;
       selectEl.appendChild(opt);
     });
-    if (selectedName) selectEl.value = selectedName;
+    if (selectedName && secs.some(function (s) { return s.name === selectedName; })) {
+      selectEl.value = selectedName;
+    } else if (!selectedName) {
+      selectEl.selectedIndex = 0;
+    }
   }
 
   function resetAddMaterialForm() {
     $("addMaterialForm").reset();
+    populateProjectSelect($("materialProject"));
+    populateSectionSelect($("materialSection"), "");
+    clearNode($("materialProjectSearchResults"));
+    clearNode($("materialSectionSearchResults"));
+    $("materialProjectSearchResults").hidden = true;
+    $("materialSectionSearchResults").hidden = true;
     clearFieldError("materialTitleError");
     clearFieldError("materialDescriptionError");
     updateUrlStatusDisplay();
     updateComputedStatus();
     updateMaterialPreview();
+  }
+
+  function hideSearchResults(inputId, resultsId) {
+    const input = $(inputId);
+    const results = $(resultsId);
+    if (input) input.value = "";
+    if (results) {
+      clearNode(results);
+      results.hidden = true;
+    }
+  }
+
+  function selectMaterialProject(prefix, projectSlug, sectionName) {
+    const projectSelect = $(prefix + "Project");
+    const sectionSelect = $(prefix + "Section");
+    if (!projectBySlug(projectSlug)) {
+      notify("error", "تعذّر اختيار المشروع: المشروع غير موجود في البيانات الحالية.");
+      return;
+    }
+
+    projectSelect.value = projectSlug;
+    populateSectionSelect(sectionSelect, projectSlug, sectionName);
+    if (prefix === "material") {
+      updateMaterialPreview();
+    } else {
+      updateEditMaterialPreview();
+    }
+    if (prefix === "editMaterial") {
+      // يبقى العرض في المسودة فقط؛ لا نعدّل المادة الأصلية هنا.
+      $("editMaterialProjectSearch").setAttribute("aria-label", "البحث عن مشروع المادة");
+    }
+    hideSearchResults(prefix === "material" ? "materialProjectSearch" : "editMaterialProjectSearch",
+      prefix === "material" ? "materialProjectSearchResults" : "editMaterialProjectSearchResults");
+  }
+
+  function selectMaterialSection(prefix, projectSlug, sectionName) {
+    if (!sectionByProjectAndName(projectSlug, sectionName)) {
+      notify("error", "تعذّر اختيار القسم: القسم لا يتبع المشروع المحدد.");
+      return;
+    }
+    selectMaterialProject(prefix, projectSlug, sectionName);
+    $(prefix + "Section").value = sectionName;
+    hideSearchResults(prefix === "material" ? "materialSectionSearch" : "editMaterialSectionSearch",
+      prefix === "material" ? "materialSectionSearchResults" : "editMaterialSectionSearchResults");
+  }
+
+  function wireMaterialSearch(prefix) {
+    const projectInputId = prefix + "ProjectSearch";
+    const projectResultsId = prefix + "ProjectSearchResults";
+    const sectionInputId = prefix + "SectionSearch";
+    const sectionResultsId = prefix + "SectionSearchResults";
+
+    on(projectInputId, "input", function () {
+      const results = searchProjects($(projectInputId).value).map(function (result) {
+        return result;
+      });
+      const container = $(projectResultsId);
+      if (!$(projectInputId).value.trim()) {
+        container.hidden = true;
+        clearNode(container);
+        return;
+      }
+       renderSearchResults(container, results, function (result) {
+        selectMaterialProject(prefix, result.project.slug);
+       }, $(projectInputId).value);
+    });
+
+    on(sectionInputId, "input", function () {
+      const query = $(sectionInputId).value;
+      const container = $(sectionResultsId);
+      if (!query.trim()) {
+        container.hidden = true;
+        clearNode(container);
+        return;
+      }
+       renderSearchResults(container, searchSections(query), function (result) {
+        selectMaterialSection(prefix, result.section.project, result.section.name);
+       }, query);
+    });
   }
 
   function updateUrlStatusDisplay() {
@@ -1349,6 +1733,9 @@
     if (!section) {
       notify("error", "اختر القسم — أضف قسمًا للمشروع أولاً إن لم يوجد أي قسم بعد.");
       hasError = true;
+    } else if (!project || !sectionByProjectAndName(project, section)) {
+      notify("error", "القسم المحدد لا يتبع المشروع المحدد. اختر المشروع والقسم من البيانات الحالية.");
+      hasError = true;
     }
     if (!title) {
       setFieldError("materialTitleError", "عنوان المادة مطلوب.");
@@ -1422,11 +1809,10 @@
   //
   // ملاحظات مهمة على التصميم:
   // - id يُعرض للقراءة فقط، ولا يوجد أي طريق لتغييره من هذا النموذج.
-  // - project يُعرض كنص للقراءة فقط أيضًا؛ لا يمكن نقل المادة إلى مشروع
-  //   آخر من هذه الشاشة في هذه المرحلة.
-  // - section قابل للتغيير عبر قائمة منسدلة (اختيار قسم آخر ضمن نفس
-  //   المشروع فقط)، لأن تغييره يعيد تعيين هذه المادة نفسها فقط، ولا
-  //   يُعيد تسمية القسم لبقية المواد.
+  // - project وsection قابلان للتغيير من القيم الموجودة أصلًا، وتبقى
+  //   التغييرات في المسودة المحلية حتى الضغط على الحفظ.
+  // - اختيار مشروع جديد يحدّث قائمة الأقسام إلى أقسامه فقط، واختيار قسم
+  //   من البحث يحدد مشروعه تلقائيًا.
   // - الحالة (status) تُحسب تلقائيًا من صلاحية الرابط، ولا يختارها
   //   المستخدم مباشرة.
   // - التعديل يُخزَّن في مسودة محلية فقط، ولا يُكتب فعليًا على القرص
@@ -1449,9 +1835,10 @@
 
     $("editMaterialId").value = m.id;
     $("editMaterialIdDisplay").textContent = m.id;
-    $("editMaterialProjectDisplay").textContent = projectNameForSlug(m.project) + " (" + m.project + ")";
-
+    populateProjectSelect($("editMaterialProject"), m.project);
     populateSectionSelect($("editMaterialSection"), m.project, m.section);
+    hideSearchResults("editMaterialProjectSearch", "editMaterialProjectSearchResults");
+    hideSearchResults("editMaterialSectionSearch", "editMaterialSectionSearchResults");
     $("editMaterialFileType").value = m.fileType || "PDF";
     $("editMaterialTitle").value = m.title || "";
     $("editMaterialDescription").value = m.description || "";
@@ -1557,6 +1944,8 @@
       return;
     }
 
+    const oldProject = m.project;
+    const project = $("editMaterialProject").value;
     const section = $("editMaterialSection").value;
     const fileType = $("editMaterialFileType").value;
     const title = $("editMaterialTitle").value.trim();
@@ -1568,8 +1957,15 @@
 
     let hasError = false;
 
+    if (!project || !projectBySlug(project)) {
+      notify("error", "اختر مشروعًا صحيحًا من المشاريع الموجودة.");
+      hasError = true;
+    }
     if (!section) {
       notify("error", "اختر القسم — أضف قسمًا للمشروع أولاً إن لم يوجد أي قسم بعد.");
+      hasError = true;
+    } else if (!project || !sectionByProjectAndName(project, section)) {
+      notify("error", "القسم المحدد لا يتبع المشروع المحدد. اختر مشروعًا وقسمًا متوافقين.");
       hasError = true;
     }
     if (!title) {
@@ -1610,8 +2006,8 @@
     if (hasError) return;
 
     // تعديل الكائن الموجود في مكانه (لا استبدال كامل)، حتى لا تُفقد أي
-    // حقول أخرى لم يعرضها هذا النموذج أصلًا. id وproject لا يتغيران أبدًا
-    // هنا.
+    // حقول أخرى لم يعرضها هذا النموذج أصلًا. id لا يتغير أبدًا هنا.
+    m.project = project;
     m.section = section;
     m.fileType = fileType;
     m.title = title;
@@ -1655,7 +2051,7 @@
     editingMaterialId = null;
     closeModal("modal-edit-material");
     notify("success", "تم تعديل المادة «" + title + "» في المسودة المحلية. لن يُحفظ التعديل فعليًا حتى الضغط على «اعتماد وحفظ».");
-    if (currentProjectSlug === m.project) renderProjectDetail();
+    if (currentProjectSlug === oldProject || currentProjectSlug === m.project) renderProjectDetail();
     renderProjectList();
     updateSaveBar();
   }
@@ -1710,6 +2106,185 @@
   }
 
   // -------------------------------------------------------------
+  // نافذة: تأكيد حذف مشروع
+  // -------------------------------------------------------------
+  //
+  // حذف مشروع فعل فوري غير قابل للتراجع من الواجهة، لذلك — خلافًا لحذف
+  // مادة من المسودة المحلية — يُرسل مباشرة إلى الخادم فور الضغط على زر
+  // «تأكيد الحذف» المنفصل، تمامًا كإنشاء مشروع وتعديله. الخادم يأخذ
+  // نسخة احتياطية تلقائية من data/materials.js (ومن صفحة المشروع إن
+  // وُجدت) قبل أي حذف فعلي.
+
+  let pendingDeleteProjectSlug = null;
+
+  function openDeleteProjectModal(slug) {
+    const p = state.projects.find(function (x) {
+      return x.slug === slug;
+    });
+    if (!p) {
+      notify("error", "تعذّر العثور على المشروع — ربما حُذف بالفعل.");
+      return;
+    }
+
+    const sectionsCount = state.sections.filter(function (s) {
+      return s.project === slug;
+    }).length;
+    const materialsCount = state.materials.filter(function (m) {
+      return m.project === slug;
+    }).length;
+
+    pendingDeleteProjectSlug = slug;
+    $("deleteProjectName").textContent = p.name || "(بدون اسم)";
+    $("deleteProjectSlug").textContent = p.slug;
+    $("deleteProjectCounts").textContent =
+      "عدد الأقسام المتأثرة: " + sectionsCount + " — عدد المواد المتأثرة: " + materialsCount;
+
+    const summaryContainer = $("deleteProjectSummary");
+    clearNode(summaryContainer);
+    summaryContainer.appendChild(buildProjectSummary(slug));
+
+    const btn = $("confirmDeleteProjectBtn");
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "تأكيد الحذف";
+    }
+
+    openModal("modal-confirm-delete-project");
+  }
+
+  async function handleConfirmDeleteProject() {
+    if (!pendingDeleteProjectSlug) {
+      closeModal("modal-confirm-delete-project");
+      return;
+    }
+    const slug = pendingDeleteProjectSlug;
+    const p = state.projects.find(function (x) {
+      return x.slug === slug;
+    });
+    const title = p ? p.name || p.slug : slug;
+
+    const btn = $("confirmDeleteProjectBtn");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "جارٍ الحذف…";
+    }
+
+    try {
+      const res = await fetch(ENDPOINTS.projectsDelete, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: slug, confirm: CONFIRM_TOKEN }),
+      });
+      const data = await res.json();
+
+      if (data.ok && data.saved) {
+        pendingDeleteProjectSlug = null;
+        closeModal("modal-confirm-delete-project");
+        notify(
+          "success",
+          "تم حذف المشروع «" + title + "» بنجاح — الأقسام المحذوفة: " +
+            data.deletedSectionsCount + "، المواد المحذوفة: " + data.deletedMaterialsCount +
+            ". نسخة احتياطية: " + data.backup
+        );
+        // loadData() تعيد ضبط currentProjectSlug وتعرض قائمة المشاريع
+        // تلقائيًا، فلا تبقى أي بطاقة أو تفاصيل للمشروع المحذوف ظاهرة.
+        await loadData();
+      } else {
+        notify("error", "فشل حذف المشروع: " + (data.error || "خطأ غير معروف من الخادم."));
+      }
+    } catch (err) {
+      notify(
+        "error",
+        "تعذّر الاتصال بخادم الإدارة أثناء حذف المشروع. لم يُحذف أي شيء فعليًا."
+      );
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "تأكيد الحذف";
+      }
+    }
+  }
+
+  // -------------------------------------------------------------
+  // نافذة: تأكيد حذف قسم
+  // -------------------------------------------------------------
+
+  let pendingDeleteSection = null; // { project, name }
+
+  function openDeleteSectionModal(project, name) {
+    const materialsCount = state.materials.filter(function (m) {
+      return m.project === project && m.section === name;
+    }).length;
+
+    pendingDeleteSection = { project: project, name: name };
+    $("deleteSectionName").textContent = name;
+    $("deleteSectionProjectName").textContent = projectNameForSlug(project);
+    $("deleteSectionCounts").textContent = "عدد المواد المتأثرة: " + materialsCount;
+
+    const btn = $("confirmDeleteSectionBtn");
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "تأكيد الحذف";
+    }
+
+    openModal("modal-confirm-delete-section");
+  }
+
+  async function handleConfirmDeleteSection() {
+    if (!pendingDeleteSection) {
+      closeModal("modal-confirm-delete-section");
+      return;
+    }
+    const project = pendingDeleteSection.project;
+    const name = pendingDeleteSection.name;
+
+    const btn = $("confirmDeleteSectionBtn");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "جارٍ الحذف…";
+    }
+
+    try {
+      const res = await fetch(ENDPOINTS.sectionsDelete, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section: { project: project, name: name },
+          confirm: CONFIRM_TOKEN,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.ok && data.saved) {
+        pendingDeleteSection = null;
+        closeModal("modal-confirm-delete-section");
+        notify(
+          "success",
+          "تم حذف القسم «" + name + "» بنجاح — المواد المحذوفة: " +
+            data.deletedMaterialsCount + ". نسخة احتياطية: " + data.backup
+        );
+        await loadData();
+        // المشروع نفسه وبقية أقسامه لم يُمسّا؛ نعيد فتح تفاصيله بعد
+        // إعادة التحميل حتى يرى المستخدم القائمة المحدَّثة فورًا بدل
+        // العودة لقائمة كل المشاريع.
+        openProjectDetail(project);
+      } else {
+        notify("error", "فشل حذف القسم: " + (data.error || "خطأ غير معروف من الخادم."));
+      }
+    } catch (err) {
+      notify(
+        "error",
+        "تعذّر الاتصال بخادم الإدارة أثناء حذف القسم. لم يُحذف أي شيء فعليًا."
+      );
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "تأكيد الحذف";
+      }
+    }
+  }
+
+  // -------------------------------------------------------------
   // شريط الحفظ وتجميع البيانات وإرسالها
   // -------------------------------------------------------------
 
@@ -1748,6 +2323,11 @@
     state.materials.forEach(function (m) {
       if (!slugSet.has(m.project)) {
         errors.push("المادة «" + (m.title || m.id) + "» تشير إلى مشروع غير موجود.");
+      }
+      if (!m.section) {
+        errors.push("المادة «" + (m.title || m.id) + "» يجب أن تكون داخل قسم صحيح.");
+      } else if (!sectionByProjectAndName(m.project, m.section)) {
+        errors.push("المادة «" + (m.title || m.id) + "» داخل قسم لا يتبع مشروعها.");
       }
       if (m.status === "available") {
         const r = localValidateArchiveUrl(m.downloadUrl);
@@ -1898,12 +2478,89 @@
   // نوافذ منبثقة (Modals)
   // -------------------------------------------------------------
 
+  // عناصر قابلة للتركيز عبر لوحة المفاتيح داخل حاوية معيّنة (تُستخدم
+  // لحصر التنقّل بـ Tab داخل النافذة المنبثقة المفتوحة فقط).
+  function getFocusable(container) {
+    if (!container) return [];
+    const nodes = container.querySelectorAll(
+      'a[href], button:not([disabled]), textarea:not([disabled]), ' +
+      'input:not([disabled]):not([type="hidden"]), select:not([disabled]), ' +
+      '[tabindex]:not([tabindex="-1"])'
+    );
+    return Array.prototype.filter.call(nodes, function (el) {
+      return el.offsetParent !== null;
+    });
+  }
+
   function openModal(id) {
-    $(id).hidden = false;
+    const overlay = $(id);
+    if (!overlay) return;
+    // نحفظ العنصر الذي كان يحمل التركيز (عادة الزر الذي فتح النافذة)
+    // لإعادة التركيز إليه تلقائيًا عند الإغلاق.
+    lastFocusedBeforeModal = document.activeElement;
+    overlay.hidden = false;
+    const modal = overlay.querySelector(".modal");
+    // ننقل التركيز إلى أول عنصر تفاعلي داخل النافذة (عادة زر الإغلاق
+    // ✕)، أو إلى حاوية النافذة نفسها إن لم يوجد أي عنصر تفاعلي.
+    window.requestAnimationFrame(function () {
+      const focusables = getFocusable(modal);
+      (focusables[0] || modal).focus();
+    });
   }
 
   function closeModal(id) {
-    $(id).hidden = true;
+    const overlay = $(id);
+    if (!overlay) return;
+    overlay.hidden = true;
+    // إعادة التركيز إلى العنصر الذي فتح النافذة، حتى لا يفقد مستخدم
+    // لوحة المفاتيح أو قارئ الشاشة موضعه في الصفحة بعد الإغلاق.
+    if (lastFocusedBeforeModal && typeof lastFocusedBeforeModal.focus === "function") {
+      lastFocusedBeforeModal.focus();
+    }
+    lastFocusedBeforeModal = null;
+  }
+
+  // حصر التنقّل بـ Tab / Shift+Tab داخل النافذة المنبثقة المفتوحة حاليًا
+  // فقط (focus trap)، بحيث لا يخرج التركيز إلى محتوى الصفحة خلف الطبقة
+  // المعتمة.
+  function trapModalFocus(e) {
+    if (e.key !== "Tab") return;
+    const openOverlay = document.querySelector(".modal-overlay:not([hidden])");
+    if (!openOverlay) return;
+    const modal = openOverlay.querySelector(".modal");
+    const focusables = getFocusable(modal);
+    if (!focusables.length) {
+      e.preventDefault();
+      modal.focus();
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first || !modal.contains(document.activeElement)) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last || !modal.contains(document.activeElement)) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  }
+
+  // إغلاق أي قائمة نتائج بحث مفتوحة (البحث السريع العام، أو حقول
+  // البحث الداخلية عن مشروع/قسم داخل النماذج) عبر Escape.
+  function closeOpenSearchDropdowns() {
+    let closedAny = false;
+    document.querySelectorAll(".search-results").forEach(function (el) {
+      if (!el.hidden) {
+        el.hidden = true;
+        clearNode(el);
+        closedAny = true;
+      }
+    });
+    return closedAny;
   }
 
   // -------------------------------------------------------------
@@ -1917,6 +2574,17 @@
       showListView();
     });
 
+    on("globalSearchInput", "input", function () {
+      const query = $("globalSearchInput").value;
+      const results = $("globalSearchResults");
+      if (!query.trim()) {
+        clearNode(results);
+        results.hidden = true;
+        return;
+      }
+       renderSearchResults(results, searchAll(query), selectGlobalSearchResult, query);
+    });
+
     // إغلاق النوافذ المنبثقة
     document.querySelectorAll("[data-close-modal]").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -1925,15 +2593,25 @@
     });
     document.querySelectorAll(".modal-overlay").forEach(function (overlay) {
       overlay.addEventListener("click", function (e) {
-        if (e.target === overlay) overlay.hidden = true;
+        if (e.target === overlay) closeModal(overlay.id);
       });
     });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape") {
-        document.querySelectorAll(".modal-overlay").forEach(function (o) {
-          if (!o.hidden) o.hidden = true;
-        });
+        const openOverlay = document.querySelector(".modal-overlay:not([hidden])");
+        if (openOverlay) {
+          // إغلاق النافذة المنبثقة المفتوحة حاليًا فقط (مع إعادة
+          // التركيز تلقائيًا إلى الزر الذي فتحها، عبر closeModal).
+          closeModal(openOverlay.id);
+        } else {
+          // لا توجد نافذة مفتوحة: أغلق أي قائمة نتائج بحث مفتوحة
+          // (البحث السريع العام أو حقول البحث الداخلية) إن وُجدت.
+          closeOpenSearchDropdowns();
+        }
+        return;
       }
+      // حصر التنقّل بـ Tab/Shift+Tab داخل النافذة المنبثقة المفتوحة.
+      trapModalFocus(e);
     });
 
     // نافذة إضافة مشروع
@@ -1971,6 +2649,12 @@
       populateSectionSelect($("materialSection"), $("materialProject").value);
       updateMaterialPreview();
     });
+    on("editMaterialProject", "change", function () {
+      populateSectionSelect($("editMaterialSection"), $("editMaterialProject").value);
+      updateEditMaterialPreview();
+    });
+    wireMaterialSearch("material");
+    wireMaterialSearch("editMaterial");
     on("materialTitle", "input", updateMaterialPreview);
     on("materialDescription", "input", updateMaterialPreview);
     on("materialFileType", "change", updateMaterialPreview);
@@ -2061,6 +2745,12 @@
 
     // نافذة تأكيد حذف مادة
     on("confirmDeleteMaterialBtn", "click", handleConfirmDeleteMaterial);
+
+    // نافذة تأكيد حذف مشروع
+    on("confirmDeleteProjectBtn", "click", handleConfirmDeleteProject);
+
+    // نافذة تأكيد حذف قسم
+    on("confirmDeleteSectionBtn", "click", handleConfirmDeleteSection);
 
     // شريط الحفظ ونافذة التأكيد
     on("saveAllBtn", "click", function () {

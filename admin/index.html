@@ -52,6 +52,25 @@
     <button type="button" id="retryLoadBtn" class="btn btn-primary">إعادة المحاولة</button>
   </div>
 
+  <!-- ============== البحث السريع داخل لوحة الإدارة ============== -->
+  <section id="globalSearchPanel" class="admin-search-panel" hidden aria-labelledby="globalSearchTitle">
+    <div class="admin-search-heading">
+      <div>
+        <h2 id="globalSearchTitle">بحث سريع داخل الإدارة</h2>
+        <p class="field-hint">يبحث في المشاريع والأقسام والمواد والـ slug وtrack وid.</p>
+      </div>
+    </div>
+    <label for="globalSearchInput">ابحث عن مشروع أو قسم أو مادة</label>
+    <input
+      type="search"
+      id="globalSearchInput"
+      autocomplete="off"
+      placeholder="مثال: اسم المشروع، عنوان المادة، أو bina-al-ajyal"
+      aria-controls="globalSearchResults"
+    />
+    <div id="globalSearchResults" class="search-results" role="listbox" hidden></div>
+  </section>
+
   <!-- ============== شاشة قائمة المشاريع ============== -->
   <section id="view-list" class="view" hidden>
     <div class="view-list-toolbar">
@@ -305,11 +324,17 @@
           <div class="form-group">
             <label for="materialProject">المشروع <span class="req">*</span></label>
             <select id="materialProject" name="project"></select>
+            <label for="materialProjectSearch" class="search-field-label">بحث سريع في المشاريع</label>
+            <input type="search" id="materialProjectSearch" class="inline-search-input" autocomplete="off" placeholder="اكتب جزءًا من اسم المشروع أو slug" aria-controls="materialProjectSearchResults" />
+            <div id="materialProjectSearchResults" class="search-results search-results-inline" role="listbox" hidden></div>
           </div>
 
           <div class="form-group">
             <label for="materialSection">القسم <span class="req">*</span></label>
             <select id="materialSection" name="section"></select>
+            <label for="materialSectionSearch" class="search-field-label">بحث سريع في الأقسام</label>
+            <input type="search" id="materialSectionSearch" class="inline-search-input" autocomplete="off" placeholder="اكتب اسم القسم أو وصفه" aria-controls="materialSectionSearchResults" />
+            <div id="materialSectionSearchResults" class="search-results search-results-inline" role="listbox" hidden></div>
           </div>
 
           <div class="form-group form-group-full">
@@ -427,13 +452,19 @@
           </div>
 
           <div class="form-group">
-            <label>المشروع — للقراءة فقط</label>
-            <div class="readonly-field-value" id="editMaterialProjectDisplay"></div>
+            <label for="editMaterialProject">المشروع <span class="req">*</span></label>
+            <select id="editMaterialProject" name="project"></select>
+            <label for="editMaterialProjectSearch" class="search-field-label">بحث سريع في المشاريع</label>
+            <input type="search" id="editMaterialProjectSearch" class="inline-search-input" autocomplete="off" placeholder="اكتب جزءًا من اسم المشروع أو slug" aria-controls="editMaterialProjectSearchResults" />
+            <div id="editMaterialProjectSearchResults" class="search-results search-results-inline" role="listbox" hidden></div>
           </div>
 
           <div class="form-group">
             <label for="editMaterialSection">القسم <span class="req">*</span></label>
             <select id="editMaterialSection" name="section"></select>
+            <label for="editMaterialSectionSearch" class="search-field-label">بحث سريع في الأقسام</label>
+            <input type="search" id="editMaterialSectionSearch" class="inline-search-input" autocomplete="off" placeholder="اكتب اسم القسم أو وصفه" aria-controls="editMaterialSectionSearchResults" />
+            <div id="editMaterialSectionSearchResults" class="search-results search-results-inline" role="listbox" hidden></div>
           </div>
 
           <div class="form-group">
@@ -536,6 +567,66 @@
     <div class="modal-footer">
       <button type="button" class="btn btn-ghost" data-close-modal="modal-confirm-delete-material">إلغاء</button>
       <button type="button" id="confirmDeleteMaterialBtn" class="btn btn-danger">حذف المادة</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: تأكيد حذف مشروع ============== -->
+<div id="modal-confirm-delete-project" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalDeleteProjectTitle">
+    <div class="modal-header">
+      <h3 id="modalDeleteProjectTitle">تأكيد حذف المشروع</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-confirm-delete-project" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>
+        هل أنت متأكد من حذف المشروع:
+        <strong id="deleteProjectName"></strong>؟
+      </p>
+      <p class="field-hint">slug: <code id="deleteProjectSlug" dir="ltr"></code></p>
+      <p id="deleteProjectCounts"></p>
+      <div id="deleteProjectSummary"></div>
+      <div class="delete-warning-box">
+        سيُحذف المشروع نفسه، وكل أقسامه، وكل مواده، وصفحته المرتبطة به
+        (إن كانت الإدارة قد أنشأتها تلقائيًا) — فورًا وبشكل فعلي على
+        القرص، بعد أخذ نسخة احتياطية تلقائية في <code>data/backups/</code>.
+        <strong>لا يمكن التراجع عن هذه العملية من داخل الواجهة</strong>؛
+        الاستعادة ممكنة فقط يدويًا من النسخة الاحتياطية.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-confirm-delete-project">إلغاء</button>
+      <button type="button" id="confirmDeleteProjectBtn" class="btn btn-danger">تأكيد الحذف</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: تأكيد حذف قسم ============== -->
+<div id="modal-confirm-delete-section" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalDeleteSectionTitle">
+    <div class="modal-header">
+      <h3 id="modalDeleteSectionTitle">تأكيد حذف القسم</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-confirm-delete-section" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>
+        هل أنت متأكد من حذف القسم:
+        <strong id="deleteSectionName"></strong>
+        من المشروع
+        <strong id="deleteSectionProjectName"></strong>؟
+      </p>
+      <p id="deleteSectionCounts"></p>
+      <div class="delete-warning-box">
+        سيُحذف القسم وكل مواده التابعة له فقط — فورًا وبشكل فعلي على
+        القرص، بعد أخذ نسخة احتياطية تلقائية في <code>data/backups/</code>.
+        المشروع وبقية أقسامه ومواده لن تتأثر.
+        <strong>لا يمكن التراجع عن هذه العملية من داخل الواجهة</strong>؛
+        الاستعادة ممكنة فقط يدويًا من النسخة الاحتياطية.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-confirm-delete-section">إلغاء</button>
+      <button type="button" id="confirmDeleteSectionBtn" class="btn btn-danger">تأكيد الحذف</button>
     </div>
   </div>
 </div>

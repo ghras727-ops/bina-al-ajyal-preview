@@ -438,11 +438,5 @@ var SECTIONS = [
     description: "",
     order: 0,
   },
-  {
-    project: "tgryby",
-    name: "قسم تجريبي",
-    description: "",
-    order: 0,
-  },
 ];
 

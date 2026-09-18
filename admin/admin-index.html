@@ -47,6 +47,25 @@
     <button type="button" id="retryLoadBtn" class="btn btn-primary">إعادة المحاولة</button>
   </div>
 
+  <!-- ============== البحث السريع داخل لوحة الإدارة ============== -->
+  <section id="globalSearchPanel" class="admin-search-panel" hidden aria-labelledby="globalSearchTitle">
+    <div class="admin-search-heading">
+      <div>
+        <h2 id="globalSearchTitle">بحث سريع داخل الإدارة</h2>
+        <p class="field-hint">يبحث في المشاريع والأقسام والمواد والـ slug وtrack وid.</p>
+      </div>
+    </div>
+    <label for="globalSearchInput">ابحث عن مشروع أو قسم أو مادة</label>
+    <input
+      type="search"
+      id="globalSearchInput"
+      autocomplete="off"
+      placeholder="مثال: اسم المشروع، عنوان المادة، أو bina-al-ajyal"
+      aria-controls="globalSearchResults"
+    />
+    <div id="globalSearchResults" class="search-results" role="listbox" hidden></div>
+  </section>
+
   <!-- ============== شاشة قائمة المشاريع ============== -->
   <section id="view-list" class="view" hidden>
     <div class="view-list-toolbar">
@@ -85,7 +104,7 @@
 
 <!-- ============== نافذة: إضافة مشروع ============== -->
 <div id="modal-add-project" class="modal-overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalAddProjectTitle">
+  <div class="modal" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalAddProjectTitle">
     <div class="modal-header">
       <h3 id="modalAddProjectTitle">+ إضافة مشروع جديد</h3>
       <button type="button" class="modal-close" data-close-modal="modal-add-project" aria-label="إغلاق">✕</button>
@@ -100,23 +119,23 @@
       <form id="addProjectForm" novalidate>
         <div class="form-group">
           <label for="projectName">اسم المشروع بالعربية <span class="req">*</span></label>
-          <input type="text" id="projectName" name="name" maxlength="200" autocomplete="off" />
-          <p class="field-error" id="projectNameError"></p>
+          <input type="text" id="projectName" aria-describedby="projectNameError" aria-required="true" name="name" maxlength="200" autocomplete="off" />
+          <p class="field-error" role="alert" id="projectNameError"></p>
         </div>
 
         <div class="form-group">
           <label for="projectDescription">وصف المشروع</label>
-          <textarea id="projectDescription" name="description" rows="3" maxlength="600"></textarea>
-          <p class="field-error" id="projectDescriptionError"></p>
+          <textarea id="projectDescription" aria-describedby="projectDescriptionError" name="description" rows="3" maxlength="600"></textarea>
+          <p class="field-error" role="alert" id="projectDescriptionError"></p>
         </div>
 
         <div class="form-group">
           <label for="projectSlug">
             slug (بالإنجليزية أو أحرف آمنة فقط) <span class="req">*</span>
           </label>
-          <input type="text" id="projectSlug" name="slug" maxlength="80" autocomplete="off" dir="ltr" placeholder="example-project-slug" />
+          <input type="text" id="projectSlug" aria-describedby="projectSlugError" aria-required="true" name="slug" maxlength="80" autocomplete="off" dir="ltr" placeholder="example-project-slug" />
           <p class="field-hint">أحرف إنجليزية صغيرة وأرقام وشرطات فقط، بدون مسافات.</p>
-          <p class="field-error" id="projectSlugError"></p>
+          <p class="field-error" role="alert" id="projectSlugError"></p>
         </div>
 
         <div class="form-group">
@@ -143,7 +162,7 @@
 
 <!-- ============== نافذة: تعديل مشروع ============== -->
 <div id="modal-edit-project" class="modal-overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalEditProjectTitle">
+  <div class="modal" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalEditProjectTitle">
     <div class="modal-header">
       <h3 id="modalEditProjectTitle">✎ تعديل المشروع</h3>
       <button type="button" class="modal-close" data-close-modal="modal-edit-project" aria-label="إغلاق">✕</button>
@@ -158,14 +177,14 @@
       <form id="editProjectForm" novalidate>
         <div class="form-group">
           <label for="editProjectName">اسم المشروع بالعربية <span class="req">*</span></label>
-          <input type="text" id="editProjectName" name="name" maxlength="200" autocomplete="off" />
-          <p class="field-error" id="editProjectNameError"></p>
+          <input type="text" id="editProjectName" aria-describedby="editProjectNameError" aria-required="true" name="name" maxlength="200" autocomplete="off" />
+          <p class="field-error" role="alert" id="editProjectNameError"></p>
         </div>
 
         <div class="form-group">
           <label for="editProjectDescription">وصف المشروع</label>
-          <textarea id="editProjectDescription" name="description" rows="3" maxlength="1000"></textarea>
-          <p class="field-error" id="editProjectDescriptionError"></p>
+          <textarea id="editProjectDescription" aria-describedby="editProjectDescriptionError" name="description" rows="3" maxlength="1000"></textarea>
+          <p class="field-error" role="alert" id="editProjectDescriptionError"></p>
         </div>
 
         <div class="form-group">
@@ -176,8 +195,8 @@
 
         <div class="form-group">
           <label for="editProjectOrder">ترتيب المشروع (اختياري)</label>
-          <input type="number" id="editProjectOrder" name="order" step="1" />
-          <p class="field-error" id="editProjectOrderError"></p>
+          <input type="number" id="editProjectOrder" aria-describedby="editProjectOrderError" name="order" step="1" />
+          <p class="field-error" role="alert" id="editProjectOrderError"></p>
         </div>
       </form>
 
@@ -198,7 +217,7 @@
 
 <!-- ============== نافذة: تعديل قسم ============== -->
 <div id="modal-edit-section" class="modal-overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalEditSectionTitle">
+  <div class="modal" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalEditSectionTitle">
     <div class="modal-header">
       <h3 id="modalEditSectionTitle">✎ تعديل القسم</h3>
       <button type="button" class="modal-close" data-close-modal="modal-edit-section" aria-label="إغلاق">✕</button>
@@ -219,20 +238,20 @@
 
         <div class="form-group">
           <label for="editSectionName">اسم القسم <span class="req">*</span></label>
-          <input type="text" id="editSectionName" name="name" maxlength="200" autocomplete="off" />
-          <p class="field-error" id="editSectionNameError"></p>
+          <input type="text" id="editSectionName" aria-describedby="editSectionNameError" aria-required="true" name="name" maxlength="200" autocomplete="off" />
+          <p class="field-error" role="alert" id="editSectionNameError"></p>
         </div>
 
         <div class="form-group">
           <label for="editSectionDescription">وصف اختياري</label>
-          <textarea id="editSectionDescription" name="description" rows="2" maxlength="400"></textarea>
-          <p class="field-error" id="editSectionDescriptionError"></p>
+          <textarea id="editSectionDescription" aria-describedby="editSectionDescriptionError" name="description" rows="2" maxlength="400"></textarea>
+          <p class="field-error" role="alert" id="editSectionDescriptionError"></p>
         </div>
 
         <div class="form-group">
           <label for="editSectionOrder">ترتيب القسم</label>
-          <input type="number" id="editSectionOrder" name="order" step="1" />
-          <p class="field-error" id="editSectionOrderError"></p>
+          <input type="number" id="editSectionOrder" aria-describedby="editSectionOrderError" name="order" step="1" />
+          <p class="field-error" role="alert" id="editSectionOrderError"></p>
         </div>
 
         <div class="form-group">
@@ -250,7 +269,7 @@
 
 <!-- ============== نافذة: إضافة قسم ============== -->
 <div id="modal-add-section" class="modal-overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalAddSectionTitle">
+  <div class="modal" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalAddSectionTitle">
     <div class="modal-header">
       <h3 id="modalAddSectionTitle">+ إضافة قسم جديد</h3>
       <button type="button" class="modal-close" data-close-modal="modal-add-section" aria-label="إغلاق">✕</button>
@@ -259,13 +278,13 @@
       <form id="addSectionForm" novalidate>
         <div class="form-group">
           <label for="sectionProject">المشروع التابع له <span class="req">*</span></label>
-          <select id="sectionProject" name="project"></select>
+          <select id="sectionProject" aria-required="true" aria-required="true" name="project"></select>
         </div>
 
         <div class="form-group">
           <label for="sectionName">اسم القسم <span class="req">*</span></label>
-          <input type="text" id="sectionName" name="name" maxlength="200" autocomplete="off" />
-          <p class="field-error" id="sectionNameError"></p>
+          <input type="text" id="sectionName" aria-describedby="sectionNameError" aria-required="true" name="name" maxlength="200" autocomplete="off" />
+          <p class="field-error" role="alert" id="sectionNameError"></p>
         </div>
 
         <div class="form-group">
@@ -275,8 +294,8 @@
 
         <div class="form-group">
           <label for="sectionOrder">ترتيب القسم</label>
-          <input type="number" id="sectionOrder" name="order" step="1" value="0" />
-          <p class="field-error" id="sectionOrderError"></p>
+          <input type="number" id="sectionOrder" aria-describedby="sectionOrderError" name="order" step="1" value="0" />
+          <p class="field-error" role="alert" id="sectionOrderError"></p>
         </div>
       </form>
     </div>
@@ -289,7 +308,7 @@
 
 <!-- ============== نافذة: إضافة مادة ============== -->
 <div id="modal-add-material" class="modal-overlay" hidden>
-  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="modalAddMaterialTitle">
+  <div class="modal modal-wide" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalAddMaterialTitle">
     <div class="modal-header">
       <h3 id="modalAddMaterialTitle">+ إضافة مادة جديدة</h3>
       <button type="button" class="modal-close" data-close-modal="modal-add-material" aria-label="إغلاق">✕</button>
@@ -299,29 +318,35 @@
         <div class="form-grid">
           <div class="form-group">
             <label for="materialProject">المشروع <span class="req">*</span></label>
-            <select id="materialProject" name="project"></select>
+            <select id="materialProject" aria-required="true" aria-required="true" name="project"></select>
+            <label for="materialProjectSearch" class="search-field-label">بحث سريع في المشاريع</label>
+            <input type="search" id="materialProjectSearch" class="inline-search-input" autocomplete="off" placeholder="اكتب جزءًا من اسم المشروع أو slug" aria-controls="materialProjectSearchResults" />
+            <div id="materialProjectSearchResults" class="search-results search-results-inline" role="listbox" hidden></div>
           </div>
 
           <div class="form-group">
             <label for="materialSection">القسم <span class="req">*</span></label>
-            <select id="materialSection" name="section"></select>
+            <select id="materialSection" aria-required="true" aria-required="true" name="section"></select>
+            <label for="materialSectionSearch" class="search-field-label">بحث سريع في الأقسام</label>
+            <input type="search" id="materialSectionSearch" class="inline-search-input" autocomplete="off" placeholder="اكتب اسم القسم أو وصفه" aria-controls="materialSectionSearchResults" />
+            <div id="materialSectionSearchResults" class="search-results search-results-inline" role="listbox" hidden></div>
           </div>
 
           <div class="form-group form-group-full">
             <label for="materialTitle">عنوان المادة بالعربية <span class="req">*</span></label>
-            <input type="text" id="materialTitle" name="title" maxlength="250" autocomplete="off" />
-            <p class="field-error" id="materialTitleError"></p>
+            <input type="text" id="materialTitle" aria-describedby="materialTitleError" aria-required="true" name="title" maxlength="250" autocomplete="off" />
+            <p class="field-error" role="alert" id="materialTitleError"></p>
           </div>
 
           <div class="form-group form-group-full">
             <label for="materialDescription">وصف المادة</label>
-            <textarea id="materialDescription" name="description" rows="2" maxlength="600"></textarea>
-            <p class="field-error" id="materialDescriptionError"></p>
+            <textarea id="materialDescription" aria-describedby="materialDescriptionError" name="description" rows="2" maxlength="600"></textarea>
+            <p class="field-error" role="alert" id="materialDescriptionError"></p>
           </div>
 
           <div class="form-group">
             <label for="materialFileType">نوع الملف <span class="req">*</span></label>
-            <select id="materialFileType" name="fileType">
+            <select id="materialFileType" aria-required="true" aria-required="true" name="fileType">
               <option value="PDF">PDF</option>
               <option value="Word">Word</option>
               <option value="صورة">صورة</option>
@@ -386,7 +411,7 @@
 
 <!-- ============== نافذة: عرض تفاصيل مادة ============== -->
 <div id="modal-view-material" class="modal-overlay" hidden>
-  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="modalViewMaterialTitle">
+  <div class="modal modal-wide" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalViewMaterialTitle">
     <div class="modal-header">
       <h3 id="modalViewMaterialTitle">عرض تفاصيل المادة</h3>
       <button type="button" class="modal-close" data-close-modal="modal-view-material" aria-label="إغلاق">✕</button>
@@ -402,7 +427,7 @@
 
 <!-- ============== نافذة: تعديل مادة ============== -->
 <div id="modal-edit-material" class="modal-overlay" hidden>
-  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="modalEditMaterialTitle">
+  <div class="modal modal-wide" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalEditMaterialTitle">
     <div class="modal-header">
       <h3 id="modalEditMaterialTitle">✎ تعديل مادة</h3>
       <button type="button" class="modal-close" data-close-modal="modal-edit-material" aria-label="إغلاق">✕</button>
@@ -422,18 +447,24 @@
           </div>
 
           <div class="form-group">
-            <label>المشروع — للقراءة فقط</label>
-            <div class="readonly-field-value" id="editMaterialProjectDisplay"></div>
+            <label for="editMaterialProject">المشروع <span class="req">*</span></label>
+            <select id="editMaterialProject" aria-required="true" aria-required="true" name="project"></select>
+            <label for="editMaterialProjectSearch" class="search-field-label">بحث سريع في المشاريع</label>
+            <input type="search" id="editMaterialProjectSearch" class="inline-search-input" autocomplete="off" placeholder="اكتب جزءًا من اسم المشروع أو slug" aria-controls="editMaterialProjectSearchResults" />
+            <div id="editMaterialProjectSearchResults" class="search-results search-results-inline" role="listbox" hidden></div>
           </div>
 
           <div class="form-group">
             <label for="editMaterialSection">القسم <span class="req">*</span></label>
-            <select id="editMaterialSection" name="section"></select>
+            <select id="editMaterialSection" aria-required="true" aria-required="true" name="section"></select>
+            <label for="editMaterialSectionSearch" class="search-field-label">بحث سريع في الأقسام</label>
+            <input type="search" id="editMaterialSectionSearch" class="inline-search-input" autocomplete="off" placeholder="اكتب اسم القسم أو وصفه" aria-controls="editMaterialSectionSearchResults" />
+            <div id="editMaterialSectionSearchResults" class="search-results search-results-inline" role="listbox" hidden></div>
           </div>
 
           <div class="form-group">
             <label for="editMaterialFileType">نوع الملف <span class="req">*</span></label>
-            <select id="editMaterialFileType" name="fileType">
+            <select id="editMaterialFileType" aria-required="true" aria-required="true" name="fileType">
               <option value="PDF">PDF</option>
               <option value="Word">Word</option>
               <option value="صورة">صورة</option>
@@ -442,14 +473,14 @@
 
           <div class="form-group form-group-full">
             <label for="editMaterialTitle">عنوان المادة بالعربية <span class="req">*</span></label>
-            <input type="text" id="editMaterialTitle" name="title" maxlength="250" autocomplete="off" />
-            <p class="field-error" id="editMaterialTitleError"></p>
+            <input type="text" id="editMaterialTitle" aria-describedby="editMaterialTitleError" aria-required="true" name="title" maxlength="250" autocomplete="off" />
+            <p class="field-error" role="alert" id="editMaterialTitleError"></p>
           </div>
 
           <div class="form-group form-group-full">
             <label for="editMaterialDescription">وصف المادة</label>
-            <textarea id="editMaterialDescription" name="description" rows="2" maxlength="600"></textarea>
-            <p class="field-error" id="editMaterialDescriptionError"></p>
+            <textarea id="editMaterialDescription" aria-describedby="editMaterialDescriptionError" name="description" rows="2" maxlength="600"></textarea>
+            <p class="field-error" role="alert" id="editMaterialDescriptionError"></p>
           </div>
 
           <div class="form-group">
@@ -510,7 +541,7 @@
 
 <!-- ============== نافذة: تأكيد حذف مادة ============== -->
 <div id="modal-confirm-delete-material" class="modal-overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalDeleteMaterialTitle">
+  <div class="modal" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalDeleteMaterialTitle">
     <div class="modal-header">
       <h3 id="modalDeleteMaterialTitle">تأكيد حذف المادة</h3>
       <button type="button" class="modal-close" data-close-modal="modal-confirm-delete-material" aria-label="إغلاق">✕</button>
@@ -535,9 +566,69 @@
   </div>
 </div>
 
+<!-- ============== نافذة: تأكيد حذف مشروع ============== -->
+<div id="modal-confirm-delete-project" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalDeleteProjectTitle">
+    <div class="modal-header">
+      <h3 id="modalDeleteProjectTitle">تأكيد حذف المشروع</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-confirm-delete-project" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>
+        هل أنت متأكد من حذف المشروع:
+        <strong id="deleteProjectName"></strong>؟
+      </p>
+      <p class="field-hint">slug: <code id="deleteProjectSlug" dir="ltr"></code></p>
+      <p id="deleteProjectCounts"></p>
+      <div id="deleteProjectSummary"></div>
+      <div class="delete-warning-box">
+        سيُحذف المشروع نفسه، وكل أقسامه، وكل مواده، وصفحته المرتبطة به
+        (إن كانت الإدارة قد أنشأتها تلقائيًا) — فورًا وبشكل فعلي على
+        القرص، بعد أخذ نسخة احتياطية تلقائية في <code>data/backups/</code>.
+        <strong>لا يمكن التراجع عن هذه العملية من داخل الواجهة</strong>؛
+        الاستعادة ممكنة فقط يدويًا من النسخة الاحتياطية.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-confirm-delete-project">إلغاء</button>
+      <button type="button" id="confirmDeleteProjectBtn" class="btn btn-danger">تأكيد الحذف</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============== نافذة: تأكيد حذف قسم ============== -->
+<div id="modal-confirm-delete-section" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalDeleteSectionTitle">
+    <div class="modal-header">
+      <h3 id="modalDeleteSectionTitle">تأكيد حذف القسم</h3>
+      <button type="button" class="modal-close" data-close-modal="modal-confirm-delete-section" aria-label="إغلاق">✕</button>
+    </div>
+    <div class="modal-body">
+      <p>
+        هل أنت متأكد من حذف القسم:
+        <strong id="deleteSectionName"></strong>
+        من المشروع
+        <strong id="deleteSectionProjectName"></strong>؟
+      </p>
+      <p id="deleteSectionCounts"></p>
+      <div class="delete-warning-box">
+        سيُحذف القسم وكل مواده التابعة له فقط — فورًا وبشكل فعلي على
+        القرص، بعد أخذ نسخة احتياطية تلقائية في <code>data/backups/</code>.
+        المشروع وبقية أقسامه ومواده لن تتأثر.
+        <strong>لا يمكن التراجع عن هذه العملية من داخل الواجهة</strong>؛
+        الاستعادة ممكنة فقط يدويًا من النسخة الاحتياطية.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" data-close-modal="modal-confirm-delete-section">إلغاء</button>
+      <button type="button" id="confirmDeleteSectionBtn" class="btn btn-danger">تأكيد الحذف</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============== نافذة: تأكيد الحفظ ============== -->
 <div id="modal-confirm-save" class="modal-overlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalConfirmSaveTitle">
+  <div class="modal" role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modalConfirmSaveTitle">
     <div class="modal-header">
       <h3 id="modalConfirmSaveTitle">تأكيد الاعتماد والحفظ</h3>
       <button type="button" class="modal-close" data-close-modal="modal-confirm-save" aria-label="إغلاق">✕</button>

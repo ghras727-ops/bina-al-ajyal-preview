@@ -226,6 +226,141 @@ a {
   margin: 0;
 }
 
+/* أداة مساعدة: إخفاء بصري مع بقاء العنصر متاحًا لقارئ الشاشة */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===== البحث الفوري (الصفحة الرئيسية) ===== */
+
+.site-search-section {
+  padding-block: 0 32px;
+}
+
+.site-search {
+  position: relative;
+  max-width: 560px;
+}
+
+.site-search-input {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1.5px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.site-search-input:focus {
+  outline: none;
+  border-color: var(--green-medium);
+  box-shadow: 0 0 0 3px rgba(88, 173, 35, 0.18);
+}
+
+.site-search-results {
+  position: absolute;
+  z-index: 20;
+  inset-inline: 0;
+  top: calc(100% + 8px);
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(13, 53, 16, 0.16);
+  padding: 6px;
+}
+
+.search-result {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.search-result:hover,
+.search-result.is-active {
+  background: var(--panel-alt);
+}
+
+.search-result-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: 0.98rem;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.search-result-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--olive-copper);
+  margin-top: 3px;
+}
+
+.search-result-type {
+  font-weight: 600;
+  color: var(--green-medium);
+}
+
+.search-result-desc {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.search-match {
+  background: rgba(238, 167, 75, 0.35);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.search-empty {
+  margin: 0;
+  padding: 12px;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+.search-show-all {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--line);
+  color: var(--green-medium);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 0 0 8px 8px;
+}
+
+.search-show-all:hover {
+  background: var(--panel-alt);
+}
+
 .page-intro {
   padding-block: 40px 8px;
 }
@@ -244,6 +379,11 @@ a {
 .page-intro p {
   max-width: var(--paper-text-max-width);
   color: var(--ink-soft);
+}
+
+/* زر "مشاركة المشروع" في مقدمة صفحة المشروع */
+.project-share-wrap {
+  margin-top: 18px;
 }
 
 /* ===== قسم عام ===== */
@@ -372,6 +512,66 @@ section {
   font-size: 0.95rem;
 }
 
+/* ===== آخر التحديثات ===== */
+
+.recent-updates-section {
+  padding-block: 0 8px;
+}
+
+/* قسم "آخر التحديثات" مبني كعنصر Accordion واحد بنفس أسلوب أقسام
+   المشروع، لكن بلا حاوية .accordion الخارجية (عنصر واحد فقط)، ليبقى
+   صغيرًا ومطويًا افتراضيًا فلا يغطي على قائمة المشاريع تحته. */
+.recent-updates-accordion-item {
+  margin: 0;
+}
+
+.recent-updates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recent-update-item {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(13, 53, 16, 0.05), 0 4px 14px rgba(13, 53, 16, 0.06);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recent-update-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--green-deep);
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.recent-update-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--olive-copper);
+  margin: 0;
+}
+
+.recent-update-open-btn {
+  align-self: flex-start;
+}
+
+.recent-updates-empty {
+  margin: 0;
+  color: var(--ink-soft);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 22px;
+}
+
 /* ===== قائمة المواد ===== */
 
 #material-list {
@@ -409,6 +609,33 @@ section {
   border-radius: 14px;
   box-shadow: 0 1px 2px rgba(13, 53, 16, 0.05), 0 4px 14px rgba(13, 53, 16, 0.06);
   padding: 26px 24px;
+  scroll-margin-block: 24px;
+}
+
+/* إبراز مؤقت لبطاقة مادة عند الوصول إليها عبر رابط عميق من نتائج البحث
+   (#material-<id>). لون ذهبي هادئ من الهوية الحالية، يتلاشى تلقائيًا
+   بعد فترة قصيرة دون أي تدخل من JavaScript سوى إزالة الصنف لاحقًا. */
+.material-card--highlighted {
+  animation: material-card-highlight 2.5s ease-out;
+}
+
+@keyframes material-card-highlight {
+  0% {
+    box-shadow: 0 0 0 3px rgba(238, 167, 75, 0.85), 0 8px 26px rgba(13, 53, 16, 0.12);
+    background: rgba(238, 167, 75, 0.14);
+  }
+  100% {
+    box-shadow: 0 1px 2px rgba(13, 53, 16, 0.05), 0 4px 14px rgba(13, 53, 16, 0.06);
+    background: var(--panel);
+  }
+}
+
+.material-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .material-card h3 {
@@ -417,6 +644,22 @@ section {
   color: var(--green-deep);
   font-size: 1.1rem;
   margin: 0 0 8px;
+}
+
+/* شارة "جديد": تعتمد فقط على updatedAt، بلون ذهبي هادئ من الهوية الحالية
+   بدل الأخضر (لتمييزها بوضوح عن شارة "قيد التجهيز" الرمادية المزرقة). */
+.new-badge {
+  display: inline-block;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(238, 167, 75, 0.18);
+  color: var(--olive-copper);
+  border: 1px solid rgba(238, 167, 75, 0.55);
+  white-space: nowrap;
 }
 
 /* بطاقة مادة "قيد التجهيز": مظهر مخفّف واضح أنه بلا رابط فعّال، حتى لا
@@ -486,6 +729,11 @@ section {
   padding-block: 12px;
 }
 
+.data-error-message {
+  color: var(--ink-soft);
+  padding-block: 12px;
+}
+
 /* ===== أقسام المشروع القابلة للطي (Accordion) ===== */
 
 .accordion {
@@ -504,17 +752,22 @@ section {
 
 .accordion-heading {
   margin: 0;
+  display: flex;
+  align-items: stretch;
+  /* شريط القسم بلون الهوية الذهبي/البرتقالي بدل الأبيض، مع نص أخضر داكن
+     لضمان تباين واضح وسهولة قراءة. اللون موجود على العنوان نفسه حتى
+     يبقى الشريط متصلاً بصريًا بين زر فتح القسم وزر مشاركته. */
+  background: var(--gold);
 }
 
 .accordion-trigger {
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  /* شريط القسم بلون الهوية الذهبي/البرتقالي بدل الأبيض، مع نص أخضر داكن
-     لضمان تباين واضح وسهولة قراءة. */
-  background: var(--gold);
+  background: transparent;
   border: none;
   margin: 0;
   cursor: pointer;
@@ -577,6 +830,37 @@ section {
 .accordion-trigger[aria-expanded="true"] .accordion-icon {
   transform: rotate(225deg);
   margin-block-start: 4px;
+}
+
+/* زر "مشاركة القسم" — عنصر مستقل داخل عنوان القسم، بجانب زر فتح/إغلاق
+   القسم لا داخله، بفاصل خفيف بينهما مع الحفاظ على لون شريط القسم نفسه. */
+.accordion-share-btn {
+  flex: 0 0 auto;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-inline-start: 1px solid rgba(13, 53, 16, 0.22);
+  color: var(--green-deep);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.88rem;
+  padding: 0 20px;
+  min-height: 44px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.accordion-share-btn:hover {
+  background: var(--olive-yellow);
+}
+
+.accordion-share-btn:focus-visible {
+  outline: 3px solid var(--green-deep);
+  outline-offset: -3px;
 }
 
 /* انتقال سلس وبسيط لفتح/إغلاق منطقة المواد، بالاعتماد على grid بدل
@@ -778,5 +1062,9 @@ section {
   }
   .accordion-panel-inner {
     padding: 4px 18px 20px;
+  }
+  .accordion-share-btn {
+    padding: 0 14px;
+    font-size: 0.82rem;
   }
 }

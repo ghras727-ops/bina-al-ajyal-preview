@@ -29,11 +29,6 @@ var PROJECTS = [
     description: "يهدف مشروع «القيادة التربوية وصناعة الأثر في المراكز الصيفية» إلى تأهيل العاملين تربويًا ومهاريًا وقياديًا، وتمكينهم من تقديم برامج جاذبة تسهم في بناء شخصية الطالب إيمانيًا وفكريًا وأخلاقيًا، وتعزز هويته وقدرته على التأثير الإيجابي.",
     order: 4,
   },
-  {
-    slug: "tgryby",
-    name: "المشروع التجريبي",
-    description: "",
-  },
 ];
 
 var MATERIALS = [
@@ -349,32 +344,6 @@ var MATERIALS = [
     downloadUrl: "https://archive.org/download/dublom5/dublom5.pdf",
     previewUrl: "https://archive.org/download/dublom5/dublom5.pdf",
   },
-  {
-    id: "integrated-educational-curriculum-summer-centers-ages-7-10-material",
-    title: "قلبي مع الله",
-    description: "",
-    fileType: "PDF",
-    project: "integrated-educational-curriculum-summer-centers-ages-7-10",
-    section: "الجانب الإيماني",
-    order: 1,
-    status: "available",
-    downloadUrl: "https://archive.org/download/rhlty/glby.pdf",
-    previewUrl: "https://archive.org/download/rhlty/glby.pdf",
-    updatedAt: "2026-09-18T18:03:07.385Z",
-  },
-  {
-    id: "integrated-educational-curriculum-summer-centers-ages-7-10-material-2",
-    title: "رحلتي مع الله",
-    description: "",
-    fileType: "PDF",
-    project: "integrated-educational-curriculum-summer-centers-ages-7-10",
-    section: "الجانب العبادي",
-    order: 1,
-    status: "available",
-    downloadUrl: "https://archive.org/download/rhlty/rhlty.pdf",
-    previewUrl: "https://archive.org/download/rhlty/rhlty.pdf",
-    updatedAt: "2026-09-18T18:03:07.385Z",
-  },
 ];
 
 var SECTIONS = [
@@ -417,30 +386,6 @@ var SECTIONS = [
   {
     project: "dublom",
     name: "الوثائق العامة للمشوع",
-    description: "",
-    order: 0,
-  },
-  {
-    project: "integrated-educational-curriculum-summer-centers-ages-7-10",
-    name: "الجانب الإيماني",
-    description: "",
-    order: 0,
-  },
-  {
-    project: "integrated-educational-curriculum-summer-centers-ages-7-10",
-    name: "الجانب العبادي",
-    description: "",
-    order: 2,
-  },
-  {
-    project: "integrated-educational-curriculum-summer-centers-ages-7-10",
-    name: "التجريبي",
-    description: "",
-    order: 0,
-  },
-  {
-    project: "tgryby",
-    name: "قسم تجريبي",
     description: "",
     order: 0,
   },
