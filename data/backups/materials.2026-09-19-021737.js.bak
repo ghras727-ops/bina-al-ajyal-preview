@@ -29,11 +29,6 @@ var PROJECTS = [
     description: "يهدف مشروع «القيادة التربوية وصناعة الأثر في المراكز الصيفية» إلى تأهيل العاملين تربويًا ومهاريًا وقياديًا، وتمكينهم من تقديم برامج جاذبة تسهم في بناء شخصية الطالب إيمانيًا وفكريًا وأخلاقيًا، وتعزز هويته وقدرته على التأثير الإيجابي.",
     order: 4,
   },
-  {
-    slug: "tgrybby",
-    name: "مشروع تجريبي",
-    description: "",
-  },
 ];
 
 var MATERIALS = [
@@ -503,18 +498,6 @@ var SECTIONS = [
     name: "الجانب المهاري",
     description: "",
     order: 6,
-  },
-  {
-    project: "tgrybby",
-    name: "قسم تجريبي",
-    description: "",
-    order: 0,
-  },
-  {
-    project: "tgrybby",
-    name: "قسم تجريبي2",
-    description: "",
-    order: 0,
   },
 ];
 
