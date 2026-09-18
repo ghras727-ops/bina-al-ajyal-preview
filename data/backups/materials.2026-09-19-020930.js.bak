@@ -444,11 +444,5 @@ var SECTIONS = [
     description: "",
     order: 0,
   },
-  {
-    project: "tgryby",
-    name: "قسم 222",
-    description: "",
-    order: 0,
-  },
 ];
 

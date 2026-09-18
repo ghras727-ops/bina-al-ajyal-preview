@@ -2106,6 +2106,87 @@
   }
 
   // -------------------------------------------------------------
+  // اكتشاف المسودات/التغييرات غير المحفوظة قبل حذف مشروع أو قسم
+  // -------------------------------------------------------------
+  //
+  // هذا الاكتشاف محلي بحت (لا اتصال بالخادم): يفحص state.sections
+  // و state.materials بحثًا عن أي عنصر يحمل __draft (لم يُحفظ على القرص
+  // أبدًا) أو __edited (عنصر محفوظ سابقًا لكن جرى تعديله محليًا ولم
+  // يُعتمد بعد)، ضمن نطاق المشروع أو القسم المطلوب حذفه.
+
+  function computeProjectUnsavedImpact(slug) {
+    const draftSections = state.sections.filter(function (s) {
+      return s.project === slug && s.__draft;
+    }).length;
+    const draftMaterials = state.materials.filter(function (m) {
+      return m.project === slug && m.__draft;
+    }).length;
+    const editedMaterials = state.materials.filter(function (m) {
+      return m.project === slug && m.__edited && !m.__draft;
+    }).length;
+    return {
+      draftSections: draftSections,
+      draftMaterials: draftMaterials,
+      editedMaterials: editedMaterials,
+      hasUnsaved: draftSections > 0 || draftMaterials > 0 || editedMaterials > 0,
+    };
+  }
+
+  function computeSectionUnsavedImpact(project, name) {
+    const draftMaterials = state.materials.filter(function (m) {
+      return m.project === project && m.section === name && m.__draft;
+    }).length;
+    const editedMaterials = state.materials.filter(function (m) {
+      return m.project === project && m.section === name && m.__edited && !m.__draft;
+    }).length;
+    return {
+      draftMaterials: draftMaterials,
+      editedMaterials: editedMaterials,
+      hasUnsaved: draftMaterials > 0 || editedMaterials > 0,
+    };
+  }
+
+  // يبني نص وصف مختصر لعدد العناصر غير المحفوظة المتأثرة، لعرضه داخل
+  // مربع التحذير في نافذة التأكيد.
+  function describeUnsavedImpact(impact, includeSections) {
+    const parts = [];
+    if (includeSections && impact.draftSections) {
+      parts.push("أقسام جديدة غير محفوظة: " + impact.draftSections);
+    }
+    if (impact.draftMaterials) {
+      parts.push("مواد جديدة غير محفوظة: " + impact.draftMaterials);
+    }
+    if (impact.editedMaterials) {
+      parts.push("مواد معدَّلة غير محفوظة: " + impact.editedMaterials);
+    }
+    return parts.join("، ");
+  }
+
+  // يملأ (أو يخفي) مربع تحذير المسودات داخل نافذة تأكيد الحذف، ويضبط
+  // نص زر التأكيد ليصبح «متابعة الحذف» عند وجود تغييرات غير محفوظة
+  // قد تُفقد، تمييزًا له عن التأكيد المعتاد حين لا توجد أي مسودات.
+  function applyDraftWarning(warnBoxId, btnId, impact, includeSections, subjectLabel) {
+    const warnBox = $(warnBoxId);
+    if (warnBox) {
+      if (impact.hasUnsaved) {
+        warnBox.hidden = false;
+        warnBox.textContent =
+          "تنبيه: يوجد تغييرات غير محفوظة مرتبطة بـ" + subjectLabel + " (" +
+          describeUnsavedImpact(impact, includeSections) +
+          "). لم تُحفظ هذه التغييرات على القرص بعد، والمتابعة في الحذف الآن ستفقدها نهائيًا ولن يمكن التراجع عنها. اضغط «إلغاء» إن أردت مراجعتها أو اعتمادها وحفظها أولًا، أو «متابعة الحذف» لتجاهلها والمتابعة.";
+      } else {
+        warnBox.hidden = true;
+        warnBox.textContent = "";
+      }
+    }
+    const btn = $(btnId);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = impact.hasUnsaved ? "متابعة الحذف" : "تأكيد الحذف";
+    }
+  }
+
+  // -------------------------------------------------------------
   // نافذة: تأكيد حذف مشروع
   // -------------------------------------------------------------
   //
@@ -2143,11 +2224,8 @@
     clearNode(summaryContainer);
     summaryContainer.appendChild(buildProjectSummary(slug));
 
-    const btn = $("confirmDeleteProjectBtn");
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "تأكيد الحذف";
-    }
+    const impact = computeProjectUnsavedImpact(slug);
+    applyDraftWarning("deleteProjectDraftWarning", "confirmDeleteProjectBtn", impact, true, "هذا المشروع");
 
     openModal("modal-confirm-delete-project");
   }
@@ -2164,6 +2242,7 @@
     const title = p ? p.name || p.slug : slug;
 
     const btn = $("confirmDeleteProjectBtn");
+    const originalBtnText = btn ? btn.textContent : "تأكيد الحذف";
     if (btn) {
       btn.disabled = true;
       btn.textContent = "جارٍ الحذف…";
@@ -2200,7 +2279,7 @@
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = "تأكيد الحذف";
+        btn.textContent = originalBtnText;
       }
     }
   }
@@ -2212,6 +2291,19 @@
   let pendingDeleteSection = null; // { project, name }
 
   function openDeleteSectionModal(project, name) {
+    const section = state.sections.find(function (s) {
+      return s.project === project && s.name === name;
+    });
+
+    // قسم مسودة لم يُحفظ بعد على القرص أصلًا: عرض نافذة حذف عادية هنا
+    // سيكون مضللًا (توحي بحذف فعلي ونسخة احتياطية لشيء غير موجود فعليًا
+    // في البيانات المحفوظة). بدلًا من ذلك، نُزيله من النموذج المحلي فورًا
+    // دون أي اتصال بالخادم ودون نسخة احتياطية، ودون المساس ببقية المسودات.
+    if (section && section.__draft) {
+      removeDraftSectionFromForm(project, name);
+      return;
+    }
+
     const materialsCount = state.materials.filter(function (m) {
       return m.project === project && m.section === name;
     }).length;
@@ -2219,15 +2311,45 @@
     pendingDeleteSection = { project: project, name: name };
     $("deleteSectionName").textContent = name;
     $("deleteSectionProjectName").textContent = projectNameForSlug(project);
-    $("deleteSectionCounts").textContent = "عدد المواد المتأثرة: " + materialsCount;
+    $("deleteSectionCounts").textContent =
+      "عدد الأقسام المتأثرة: 1 — عدد المواد المتأثرة: " + materialsCount;
 
-    const btn = $("confirmDeleteSectionBtn");
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "تأكيد الحذف";
-    }
+    const impact = computeSectionUnsavedImpact(project, name);
+    applyDraftWarning("deleteSectionDraftWarning", "confirmDeleteSectionBtn", impact, false, "هذا القسم");
 
     openModal("modal-confirm-delete-section");
+  }
+
+  // يزيل قسم مسودة (لم يُحفظ فعليًا بعد) من النموذج المحلي فقط، دون أي
+  // اتصال بالخادم، ودون تغيير data/materials.js، ودون إنشاء نسخة احتياطية.
+  function removeDraftSectionFromForm(project, name) {
+    state.sections = state.sections.filter(function (s) {
+      return !(s.project === project && s.name === name);
+    });
+
+    // أي مادة مسودة (لم تُحفظ هي الأخرى بعد) أُنشئت خصيصًا داخل هذا
+    // القسم المسودة لا معنى لبقائها بعد إزالة القسم نفسه من النموذج،
+    // فتُزال معه. المواد المحفوظة فعليًا التي جرى تعديلها لنقلها إلى هذا
+    // القسم (__edited) لا تُمس هنا؛ لا تُفقد بياناتها، ويبقى بإمكان
+    // المستخدم إعادة تعيين قسمها قبل الاعتماد والحفظ.
+    const removedDraftMaterials = state.materials.filter(function (m) {
+      return m.project === project && m.section === name && m.__draft;
+    }).length;
+    state.materials = state.materials.filter(function (m) {
+      return !(m.project === project && m.section === name && m.__draft);
+    });
+
+    let msg =
+      "القسم «" + name + "» مسودة غير محفوظة بعد، فأُزيل من النموذج المحلي فقط. " +
+      "لم يتغيّر أي شيء في البيانات المحفوظة على القرص، ولم تُنشأ أي نسخة احتياطية.";
+    if (removedDraftMaterials > 0) {
+      msg += " وأُزيلت معه " + removedDraftMaterials + " مادة مسودة كانت داخله ولم تُحفظ هي الأخرى بعد.";
+    }
+    notify("success", msg);
+
+    if (currentProjectSlug === project) renderProjectDetail();
+    renderProjectList();
+    updateSaveBar();
   }
 
   async function handleConfirmDeleteSection() {
@@ -2239,6 +2361,7 @@
     const name = pendingDeleteSection.name;
 
     const btn = $("confirmDeleteSectionBtn");
+    const originalBtnText = btn ? btn.textContent : "تأكيد الحذف";
     if (btn) {
       btn.disabled = true;
       btn.textContent = "جارٍ الحذف…";
@@ -2279,7 +2402,7 @@
     } finally {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = "تأكيد الحذف";
+        btn.textContent = originalBtnText;
       }
     }
   }
