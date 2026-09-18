@@ -406,18 +406,6 @@ var MATERIALS = [
     previewUrl: "https://archive.org/download/rhlty/ana.pdf",
     updatedAt: "2026-09-18T19:09:48.824Z",
   },
-  {
-    id: "integrated-educational-curriculum-summer-centers-ages-7-10-material-6",
-    title: "المهارات اليومية والتفكير الإبداعي",
-    description: "",
-    fileType: "PDF",
-    project: "integrated-educational-curriculum-summer-centers-ages-7-10",
-    section: "الجانب المهاري",
-    status: "available",
-    downloadUrl: "https://archive.org/download/mhary_202609/mhary.pdf",
-    previewUrl: "https://archive.org/download/mhary_202609/mhary.pdf",
-    updatedAt: "2026-09-18T19:20:11.385Z",
-  },
 ];
 
 var SECTIONS = [
@@ -492,12 +480,6 @@ var SECTIONS = [
     name: "الجانب الوطني والهوية",
     description: "",
     order: 5,
-  },
-  {
-    project: "integrated-educational-curriculum-summer-centers-ages-7-10",
-    name: "الجانب المهاري",
-    description: "",
-    order: 6,
   },
 ];
 
